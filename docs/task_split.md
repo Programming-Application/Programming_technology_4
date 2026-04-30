@@ -175,16 +175,21 @@ public record ConfirmedReservationView(
 
 ## 5. Conflict 回避ルール (運用)
 
-1. **ブランチ命名**: `<owner>/<bc>/<feature>` 例: `c/reservation/hold-seats`
+ブランチ戦略は **`main` ← `develop` ← `feat/*`** の3層 (詳細: [`../CONTRIBUTING.md`](../CONTRIBUTING.md))。
+
+1. **ブランチ命名**: `feat/<owner>/<bc>/<topic>` 例: `feat/c/reservation/hold-seats`
+   - 修正系は `fix/...`、ドキュメントは `docs/...`、ビルド/CIは `build/...` `ci/...`
+   - **base は必ず `develop`** (`main` は release PR でのみ更新)
 2. **小さく頻繁にPR**: 1PR < 400行目安。WIP は draft で。
 3. **共有ファイル変更は予告**: `build.gradle.kts` / `App.java` / `application.properties` を触る PR は Slack/Issue に「touching shared X」と書く。
 4. **migrate ファイルは `V###` 番号衝突を避ける**:
    - 100の位を担当に予約: 0xx=shared, 1xx=catalog, 2xx=reservation, 3xx=ordering, 4xx=ticketing
    - 同担当内では時系列で +1
-5. **rebase before push**: main を rebase で取り込んでから push (merge commit を作らない)
+5. **rebase before push**: `develop` を rebase で取り込んでから push (merge commit を作らない)
 6. **ArchUnit Rule** (`testing.md` 参照) で BC 越境参照を **CI で機械検出**。レビュー疲労を避ける。
 7. **Daily 5分同期**: 翌日触る共有ファイルだけ口頭で宣言。
 8. **PR テンプレ** に「触ったshared file」「変更したinterface」「追加マイグレ番号」を明記する欄を設ける。
+9. **`main` は protected**: 直 push 禁止 / force push 禁止 / 必須 CI green / 承認 1 件以上。
 
 ---
 
