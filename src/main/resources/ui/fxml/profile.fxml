@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<!-- Owner: Person A. ID-04..06. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      spacing="8" prefWidth="480" prefHeight="320">
+  <Label text="Profile (TODO)"/>
+</VBox>

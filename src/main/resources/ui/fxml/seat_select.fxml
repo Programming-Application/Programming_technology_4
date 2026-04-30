@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<!-- Owner: Person C. RV-01/02. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      spacing="8" prefWidth="900" prefHeight="700">
+  <Label text="Seat Select (TODO)"/>
+</VBox>

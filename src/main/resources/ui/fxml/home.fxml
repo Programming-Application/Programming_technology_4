@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<!-- Owner: Person B. CT-01/04/05. -->
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      spacing="8" prefWidth="800" prefHeight="600">
+  <Label text="Home / Screenings (TODO)"/>
+</VBox>
