@@ -1,0 +1,39 @@
+[versions]
+javafx = "21.0.5"
+junit = "5.10.2"
+assertj = "3.25.3"
+mockito = "5.11.0"
+sqlite = "3.45.1.0"
+flyway = "10.10.0"
+slf4j = "2.0.12"
+logback = "1.5.3"
+archunit = "1.3.0"
+awaitility = "4.2.1"
+errorprone = "2.27.0"
+
+# plugin versions
+spotlessPlugin = "6.25.0"
+errorpronePlugin = "3.1.0"
+javafxPlugin = "0.1.0"
+
+[libraries]
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version.ref = "spotlessPlugin" }
+errorprone = { id = "net.ltgt.errorprone", version.ref = "errorpronePlugin" }
+javafx = { id = "org.openjfx.javafxplugin", version.ref = "javafxPlugin" }
