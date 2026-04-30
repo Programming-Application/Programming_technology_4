@@ -2,7 +2,8 @@ name: lint
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,4 +18,12 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v3
-      - run: ./gradlew --no-daemon spotlessCheck checkstyleMain checkstyleTest
+      - name: Spotless + Checkstyle
+        run: ./gradlew --no-daemon spotlessCheck checkstyleMain checkstyleTest checkstyleTestFixtures
+      - name: Upload checkstyle reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-${{ github.run_id }}
+          path: build/reports/checkstyle/
+          if-no-files-found: ignore
