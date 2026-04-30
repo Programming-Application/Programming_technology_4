@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle-wrapper.jar
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+nbproject/private/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / runtime data
+*.log
+data/*.db
+data/*.db-shm
+data/*.db-wal
+/tmp/
+
+# JaCoCo
+*.exec
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# Local env
+.env
+.env.local
