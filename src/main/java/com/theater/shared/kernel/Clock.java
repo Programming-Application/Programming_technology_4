@@ -10,8 +10,8 @@ import java.time.Instant;
 @FunctionalInterface
 public interface Clock {
 
-    /** 実時間で動作する標準実装。 */
-    Clock SYSTEM = Instant::now;
+  /** 実時間で動作する標準実装。 */
+  Clock SYSTEM = Instant::now;
 
-    Instant now();
+  Instant now();
 }

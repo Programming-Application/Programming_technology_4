@@ -9,5 +9,5 @@ package com.theater.shared.di;
  */
 @FunctionalInterface
 public interface Provider<T> {
-    T get(Container container);
+  T get(Container container);
 }

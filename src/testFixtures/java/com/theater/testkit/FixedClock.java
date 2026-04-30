@@ -12,26 +12,26 @@ import java.util.Objects;
  */
 public final class FixedClock implements Clock {
 
-    private volatile Instant now;
+  private volatile Instant now;
 
-    public FixedClock(Instant initial) {
-        this.now = Objects.requireNonNull(initial, "initial");
-    }
+  public FixedClock(Instant initial) {
+    this.now = Objects.requireNonNull(initial, "initial");
+  }
 
-    public static FixedClock at(Instant t) {
-        return new FixedClock(t);
-    }
+  public static FixedClock at(Instant t) {
+    return new FixedClock(t);
+  }
 
-    @Override
-    public Instant now() {
-        return now;
-    }
+  @Override
+  public Instant now() {
+    return now;
+  }
 
-    public synchronized void advance(Duration d) {
-        this.now = this.now.plus(Objects.requireNonNull(d));
-    }
+  public synchronized void advance(Duration d) {
+    this.now = this.now.plus(Objects.requireNonNull(d));
+  }
 
-    public synchronized void set(Instant t) {
-        this.now = Objects.requireNonNull(t);
-    }
+  public synchronized void set(Instant t) {
+    this.now = Objects.requireNonNull(t);
+  }
 }

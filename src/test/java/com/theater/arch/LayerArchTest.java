@@ -15,24 +15,24 @@ import com.tngtech.archunit.lang.ArchRule;
 @AnalyzeClasses(packages = "com.theater", importOptions = ImportOption.DoNotIncludeTests.class)
 public class LayerArchTest {
 
-    @ArchTest
-    static final ArchRule LAYERED_DEPENDENCIES =
-            layeredArchitecture()
-                    .consideringAllDependencies()
-                    .layer("UI")
-                    .definedBy("..ui..")
-                    .layer("Application")
-                    .definedBy("..application..")
-                    .layer("Domain")
-                    .definedBy("..domain..")
-                    .layer("Infrastructure")
-                    .definedBy("..infrastructure..")
-                    .whereLayer("UI")
-                    .mayNotBeAccessedByAnyLayer()
-                    .whereLayer("Application")
-                    .mayOnlyBeAccessedByLayers("UI")
-                    .whereLayer("Infrastructure")
-                    .mayNotBeAccessedByAnyLayer()
-                    // 雛形段階 (実装が乗るまで) は空レイヤを許容
-                    .withOptionalLayers(true);
+  @ArchTest
+  static final ArchRule LAYERED_DEPENDENCIES =
+      layeredArchitecture()
+          .consideringAllDependencies()
+          .layer("UI")
+          .definedBy("..ui..")
+          .layer("Application")
+          .definedBy("..application..")
+          .layer("Domain")
+          .definedBy("..domain..")
+          .layer("Infrastructure")
+          .definedBy("..infrastructure..")
+          .whereLayer("UI")
+          .mayNotBeAccessedByAnyLayer()
+          .whereLayer("Application")
+          .mayOnlyBeAccessedByLayers("UI")
+          .whereLayer("Infrastructure")
+          .mayNotBeAccessedByAnyLayer()
+          // 雛形段階 (実装が乗るまで) は空レイヤを許容
+          .withOptionalLayers(true);
 }

@@ -7,5 +7,5 @@ package com.theater.shared.di;
  * {@code container.install(new XxxModule())} を呼ぶ。
  */
 public interface Module {
-    void bind(Container container);
+  void bind(Container container);
 }

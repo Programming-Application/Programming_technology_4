@@ -10,7 +10,7 @@ package com.theater.shared.tx;
  * </ul>
  */
 public enum Tx {
-    REQUIRED,
-    REQUIRES_NEW,
-    READ_ONLY
+  REQUIRED,
+  REQUIRES_NEW,
+  READ_ONLY
 }

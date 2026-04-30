@@ -18,28 +18,28 @@ import java.util.Objects;
  */
 public abstract class TransactionalUseCase<C, R> {
 
-    protected final UnitOfWork uow;
+  protected final UnitOfWork uow;
 
-    protected TransactionalUseCase(UnitOfWork uow) {
-        this.uow = Objects.requireNonNull(uow, "uow");
-    }
+  protected TransactionalUseCase(UnitOfWork uow) {
+    this.uow = Objects.requireNonNull(uow, "uow");
+  }
 
-    public final R execute(C command) {
-        Objects.requireNonNull(command, "command");
-        validate(command);
-        return uow.execute(txMode(), () -> handle(command));
-    }
+  public final R execute(C command) {
+    Objects.requireNonNull(command, "command");
+    validate(command);
+    return uow.execute(txMode(), () -> handle(command));
+  }
 
-    /** 既定は {@link Tx#REQUIRED}。読込専用なら {@link Tx#READ_ONLY} を返す override を行う。 */
-    protected Tx txMode() {
-        return Tx.REQUIRED;
-    }
+  /** 既定は {@link Tx#REQUIRED}。読込専用なら {@link Tx#READ_ONLY} を返す override を行う。 */
+  protected Tx txMode() {
+    return Tx.REQUIRED;
+  }
 
-    /** 入力検証。失敗時はドメイン例外を投げる。既定は no-op。 */
-    protected void validate(C command) {
-        // 既定は何もしない
-    }
+  /** 入力検証。失敗時はドメイン例外を投げる。既定は no-op。 */
+  protected void validate(C command) {
+    // 既定は何もしない
+  }
 
-    /** 業務本体。Tx の中で呼ばれる。 */
-    protected abstract R handle(C command);
+  /** 業務本体。Tx の中で呼ばれる。 */
+  protected abstract R handle(C command);
 }

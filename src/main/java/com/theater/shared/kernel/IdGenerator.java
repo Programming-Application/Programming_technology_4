@@ -12,8 +12,8 @@ import java.util.UUID;
 @FunctionalInterface
 public interface IdGenerator {
 
-    /** UUID v4 文字列を返す既定実装。 */
-    IdGenerator UUID_V4 = () -> UUID.randomUUID().toString();
+  /** UUID v4 文字列を返す既定実装。 */
+  IdGenerator UUID_V4 = () -> UUID.randomUUID().toString();
 
-    String newId();
+  String newId();
 }
