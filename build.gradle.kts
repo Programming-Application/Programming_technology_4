@@ -77,7 +77,9 @@ tasks.named<JavaCompile>("compileTestFixturesJava").configure {
 spotless {
     java {
         target("src/**/*.java")
-        googleJavaFormat("1.22.0").aosp()
+        // 2sp indent / 4sp continuation の google-java-format 標準スタイル。
+        // Lambda / fluent assertion / builder 系で AOSP より圧倒的に読みやすい。
+        googleJavaFormat("1.22.0")
         importOrder()
         removeUnusedImports()
         formatAnnotations()
