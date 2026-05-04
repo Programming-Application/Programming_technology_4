@@ -40,25 +40,23 @@ public final class App extends Application {
   static void bootstrap() {
     Path dbFile = Paths.get(DB_PATH);
     ensureParent(dbFile);
+    String url = "jdbc:sqlite:" + dbFile;
 
-    SQLiteConfig config = new SQLiteConfig();
-    config.enforceForeignKeys(true);
-    config.setJournalMode(SQLiteConfig.JournalMode.WAL);
-    config.setBusyTimeout(5_000);
-    config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
-
-    SQLiteDataSource ds = new SQLiteDataSource(config);
-    ds.setUrl("jdbc:sqlite:" + dbFile);
-
-    Flyway flyway = Flyway.configure().dataSource(ds).locations("classpath:db/migration").load();
+    // 1) writable DS で Flyway を流して DB ファイルとスキーマを実体化させる。
+    SQLiteDataSource writable = buildSqliteDataSource(url, false);
+    Flyway flyway =
+        Flyway.configure().dataSource(writable).locations("classpath:db/migration").load();
     flyway.migrate();
 
+    // 2) read-only DS は DB ファイルが存在してから構築する (xerial sqlite-jdbc は
+    //    Connection.setReadOnly() の動的変更を許可しないため、SQLiteConfig 側で確定させる)。
+    SQLiteDataSource readOnly = buildSqliteDataSource(url, true);
+
     Container container = new Container();
-    container.registerSingleton(DataSource.class, c -> ds);
+    container.registerSingleton(DataSource.class, c -> writable); // writable がデフォルト
     container.registerSingleton(Clock.class, c -> Clock.SYSTEM);
     container.registerSingleton(IdGenerator.class, c -> IdGenerator.UUID_V4);
-    container.registerSingleton(
-        UnitOfWork.class, c -> new JdbcUnitOfWork(c.resolve(DataSource.class)));
+    container.registerSingleton(UnitOfWork.class, c -> new JdbcUnitOfWork(writable, readOnly));
 
     // TODO(B): container.install(new CatalogModule());
     // TODO(C): container.install(new ReservationModule());
@@ -68,6 +66,20 @@ public final class App extends Application {
 
     Container.setGlobal(container);
     LOG.info("Application bootstrapped. db={}", dbFile.toAbsolutePath());
+  }
+
+  private static SQLiteDataSource buildSqliteDataSource(String url, boolean readOnly) {
+    SQLiteConfig config = new SQLiteConfig();
+    config.enforceForeignKeys(true);
+    config.setJournalMode(SQLiteConfig.JournalMode.WAL);
+    config.setBusyTimeout(5_000);
+    config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+    if (readOnly) {
+      config.setReadOnly(true);
+    }
+    SQLiteDataSource ds = new SQLiteDataSource(config);
+    ds.setUrl(url);
+    return ds;
   }
 
   private static void ensureParent(Path dbFile) {

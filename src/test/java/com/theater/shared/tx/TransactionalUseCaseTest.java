@@ -30,7 +30,7 @@ class TransactionalUseCaseTest {
   @BeforeEach
   void setup() {
     testDb = Db.openTempFile();
-    uow = new JdbcUnitOfWork(testDb.dataSource());
+    uow = new JdbcUnitOfWork(testDb.writable(), testDb.readOnly());
   }
 
   @AfterEach
@@ -113,7 +113,7 @@ class TransactionalUseCaseTest {
   // ---------- helpers ----------
 
   private long countUsers() {
-    try (Connection conn = testDb.dataSource().getConnection();
+    try (Connection conn = testDb.writable().getConnection();
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
       rs.next();

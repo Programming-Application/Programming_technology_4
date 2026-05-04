@@ -31,7 +31,7 @@ class JdbcCatalogRepositoryIT {
   @BeforeEach
   void setup() {
     testDb = Db.openTempFile();
-    uow = new JdbcUnitOfWork(testDb.dataSource());
+    uow = new JdbcUnitOfWork(testDb.writable(), testDb.readOnly());
     repository = new JdbcCatalogRepository(uow);
     seedCatalog();
   }

@@ -18,19 +18,31 @@ import javax.sql.DataSource;
  *   <li>{@link Tx#REQUIRED} で既存 Tx があれば join (新規開始しない)。
  * </ul>
  *
+ * <p>Read-only トランザクションは <strong>専用の DataSource</strong> から接続を取得する。 これは xerial sqlite-jdbc が {@code
+ * Connection.setReadOnly(true)} を接続確立後に呼ぶことを 拒否するため (Cannot change read-only flag after
+ * establishing a connection.)。 read-only 用 DS は構築時点で {@code SQLiteConfig.setReadOnly(true)} を持つ 別
+ * DS を渡す前提。
+ *
  * <p>SQLite の同時書込は単一プロセス前提で WAL + 単一接続で十分。BEGIN IMMEDIATE が必要な パス (HoldSeats など) はリポジトリ側で自前発行する設計。
  */
 public final class JdbcUnitOfWork implements UnitOfWork {
 
-  private final DataSource dataSource;
+  private final DataSource writableDataSource;
+  private final DataSource readOnlyDataSource;
 
   // ErrorProne note: instance ThreadLocal は通常はリークの温床だが、UoW 自体が DI で
   // singleton として保持される前提なので問題ない。テストでは UoW を都度作る。
   @SuppressWarnings("ThreadLocalUsage")
   private final ThreadLocal<Frame> current = new ThreadLocal<>();
 
-  public JdbcUnitOfWork(DataSource dataSource) {
-    this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
+  /**
+   * @param writableDataSource 通常 (REQUIRED) Tx 用。
+   * @param readOnlyDataSource READ_ONLY Tx 用。SQLite なら {@code SQLiteConfig.setReadOnly(true)} で
+   *     構築済の DataSource を渡すこと。
+   */
+  public JdbcUnitOfWork(DataSource writableDataSource, DataSource readOnlyDataSource) {
+    this.writableDataSource = Objects.requireNonNull(writableDataSource, "writableDataSource");
+    this.readOnlyDataSource = Objects.requireNonNull(readOnlyDataSource, "readOnlyDataSource");
   }
 
   @Override
@@ -84,10 +96,12 @@ public final class JdbcUnitOfWork implements UnitOfWork {
   }
 
   private Connection openConnection(Tx mode) {
+    DataSource ds = (mode == Tx.READ_ONLY) ? readOnlyDataSource : writableDataSource;
     try {
-      Connection conn = dataSource.getConnection();
+      Connection conn = ds.getConnection();
       conn.setAutoCommit(false);
-      conn.setReadOnly(mode == Tx.READ_ONLY);
+      // setReadOnly() は呼ばない: SQLite は接続確立後の変更を許可しないため、
+      // read-only は DataSource 側 (SQLiteConfig.setReadOnly(true)) で確定済の前提。
       return conn;
     } catch (SQLException e) {
       throw new IllegalStateException("Failed to open JDBC connection", e);

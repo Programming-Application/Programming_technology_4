@@ -34,7 +34,7 @@ class SchemaMigrationIT {
 
   @Test
   void users_table_is_created_with_unique_email() {
-    try (Connection conn = testDb.dataSource().getConnection()) {
+    try (Connection conn = testDb.writable().getConnection()) {
       insertUser(conn, "u-1", "a@example.com");
       assertThatThrownBy(() -> insertUser(conn, "u-2", "a@example.com"))
           .isInstanceOf(SQLException.class)
@@ -46,7 +46,7 @@ class SchemaMigrationIT {
 
   @Test
   void users_role_check_constraint_blocks_invalid_roles() {
-    try (Connection conn = testDb.dataSource().getConnection();
+    try (Connection conn = testDb.writable().getConnection();
         PreparedStatement ps =
             conn.prepareStatement(
                 "INSERT INTO users(user_id,email,name,password_hash,role,"
@@ -69,7 +69,7 @@ class SchemaMigrationIT {
 
   @Test
   void outbox_table_is_created() {
-    try (Connection conn = testDb.dataSource().getConnection();
+    try (Connection conn = testDb.writable().getConnection();
         Statement stmt = conn.createStatement();
         ResultSet rs =
             stmt.executeQuery(
@@ -84,7 +84,7 @@ class SchemaMigrationIT {
 
   @Test
   void snapshot_initially_empty() {
-    var snapshot = Db.snapshot(testDb.dataSource());
+    var snapshot = Db.snapshot(testDb.writable());
     assertThat(snapshot).containsEntry("users", 0L).containsEntry("domain_events_outbox", 0L);
   }
 

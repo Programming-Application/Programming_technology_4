@@ -27,7 +27,7 @@ class JdbcUnitOfWorkTxTest {
   @BeforeEach
   void setup() {
     testDb = Db.openTempFile();
-    uow = new JdbcUnitOfWork(testDb.dataSource());
+    uow = new JdbcUnitOfWork(testDb.writable(), testDb.readOnly());
   }
 
   @AfterEach
@@ -118,12 +118,84 @@ class JdbcUnitOfWorkTxTest {
           Tx.REQUIRED, () -> insertUser(uow.currentConnection(), "u-1", "durable@x.com"));
 
       // 別接続で読み直す
-      try (Connection fresh = testDb.dataSource().getConnection();
+      try (Connection fresh = testDb.writable().getConnection();
           Statement stmt = fresh.createStatement();
           ResultSet rs = stmt.executeQuery("SELECT email FROM users WHERE user_id='u-1'")) {
         assertThat(rs.next()).isTrue();
         assertThat(rs.getString(1)).isEqualTo("durable@x.com");
       }
+    }
+  }
+
+  /**
+   * READ_ONLY Tx は専用の DataSource (SQLiteConfig.setReadOnly(true)) から接続を取る契約。 SELECT は通り、INSERT は
+   * SQLite 側で `SQLITE_READONLY` (= attempt to write a readonly database) で 失敗し、UoW の Rollback
+   * 経路を通って外側に伝搬する。
+   */
+  @Nested
+  class ReadOnly {
+
+    @BeforeEach
+    void seedOneUser() {
+      uow.executeVoid(
+          Tx.REQUIRED, () -> insertUser(uow.currentConnection(), "seed-1", "seed@example.com"));
+    }
+
+    @Test
+    void read_only_tx_allows_select() {
+      Long count =
+          uow.execute(
+              Tx.READ_ONLY,
+              () -> {
+                try (Statement stmt = uow.currentConnection().createStatement();
+                    ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
+                  rs.next();
+                  return rs.getLong(1);
+                } catch (SQLException e) {
+                  throw new IllegalStateException(e);
+                }
+              });
+      assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    void read_only_tx_rejects_writes_at_jdbc_level() {
+      assertThatThrownBy(
+              () ->
+                  uow.executeVoid(
+                      Tx.READ_ONLY,
+                      () -> insertUser(uow.currentConnection(), "u-2", "ro@example.com")))
+          .isInstanceOf(IllegalStateException.class)
+          .hasRootCauseInstanceOf(SQLException.class);
+
+      // seed の1件のみ。read-only 経路で書込は通っていない。
+      assertThat(countUsers()).isEqualTo(1L);
+    }
+
+    @Test
+    void read_only_uses_separate_datasource_from_writable() {
+      Boolean readOnlyFlag =
+          uow.execute(
+              Tx.READ_ONLY,
+              () -> {
+                try {
+                  return uow.currentConnection().isReadOnly();
+                } catch (SQLException e) {
+                  throw new IllegalStateException(e);
+                }
+              });
+      Boolean writableFlag =
+          uow.execute(
+              Tx.REQUIRED,
+              () -> {
+                try {
+                  return uow.currentConnection().isReadOnly();
+                } catch (SQLException e) {
+                  throw new IllegalStateException(e);
+                }
+              });
+      assertThat(readOnlyFlag).isTrue();
+      assertThat(writableFlag).isFalse();
     }
   }
 
@@ -133,7 +205,7 @@ class JdbcUnitOfWorkTxTest {
   }
 
   private long countUsers() {
-    try (Connection conn = testDb.dataSource().getConnection();
+    try (Connection conn = testDb.writable().getConnection();
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
       rs.next();
