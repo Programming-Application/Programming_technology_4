@@ -1,9 +1,9 @@
 package com.theater.catalog.application;
 
 import com.theater.catalog.domain.CatalogQueryRepository;
-import com.theater.catalog.domain.MovieId;
 import com.theater.shared.error.NotFoundException;
 import com.theater.shared.kernel.Clock;
+import com.theater.shared.kernel.MovieId;
 import com.theater.shared.tx.TransactionalUseCase;
 import com.theater.shared.tx.Tx;
 import com.theater.shared.tx.UnitOfWork;

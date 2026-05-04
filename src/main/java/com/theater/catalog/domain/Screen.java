@@ -1,5 +1,6 @@
 package com.theater.catalog.domain;
 
+import com.theater.shared.kernel.ScreenId;
 import java.time.Instant;
 import java.util.Objects;
 
