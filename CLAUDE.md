@@ -113,10 +113,17 @@
 
 ## 6. ブランチ運用
 
-- ブランチ命名: `<owner>/<bc>/<feature>` 例: `c/reservation/hold-seats`
-- main への直 push 禁止 (Branch Protection)
+**`main` ← `develop` ← `feat/*`** の3層運用 (詳細: [`CONTRIBUTING.md`](CONTRIBUTING.md))。
+
+- ブランチ命名: `feat/<owner>/<bc>/<topic>` 例: `feat/c/reservation/hold-seats`
+  - 修正は `fix/...`、ドキュメントは `docs/...`、ビルド/CIは `build/...` `ci/...`
+- **PR の base ブランチは原則 `develop`** (feat/* → develop)
+- `develop` → `main` はリリース PR のみ (fast-forward, linear history)
+- `main` への直 push 禁止 / force push 禁止 / `--no-verify` 禁止
+- 必須 CI: `build & unit/integration test` / `lint`
+- 承認 1 名以上必須
 - 1 PR < 400 行を目安
-- main を rebase で取り込み、merge commit を作らない (linear history)
+- Conflict 解消は `git rebase develop` (merge commit を作らない)
 - PR テンプレに必須記載: **触ったshared file / 追加 V### / 変更した interface**
 
 ---

@@ -2,9 +2,10 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -48,6 +49,15 @@ jobs:
       - name: Coverage gate
         run: ./gradlew --no-daemon jacocoTestCoverageVerification
 
+      - name: Publish test results to PR
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          check_name: "JUnit (test)"
+          report_paths: build/test-results/test/*.xml
+          fail_on_failure: false
+          require_tests: false
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,6 +73,12 @@ jobs:
   slow:
     name: concurrency / slow tests
     needs: build-test
+    # feat/* → develop の PR では走らせず、push と main 向け PR でだけフル走行。
+    # 実体は @Tag("slow") が増えてからゆっくり回す方針。
+    if: >-
+      github.event_name == 'push'
+      || (github.event_name == 'pull_request' && github.base_ref == 'main')
+      || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

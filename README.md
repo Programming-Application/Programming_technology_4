@@ -127,8 +127,10 @@ theater/
 - レイヤ越境・BC 越境参照は **ArchUnit が CI で機械検出** (違反は merge 不可)
 - ファイル所有権は [`docs/task_split.md`](docs/task_split.md) §2 のマップに従う。共有ファイル (`build.gradle.kts` / `App.java` / `application.properties`) を触るときは PR description に明記
 - マイグレーション番号は `V0xx=shared` / `V1xx=catalog` / `V2xx=reservation` / `V3xx=ordering` / `V4xx=ticketing`
-- ブランチ命名: `<owner>/<bc>/<feature>` 例: `c/reservation/hold-seats`
-- main は **rebase merge** のみ (linear history)
+- ブランチ戦略: **`main` ← `develop` ← `feat/*`** ([`CONTRIBUTING.md`](CONTRIBUTING.md))
+  - `feat/<owner>/<bc>/<topic>` 例: `feat/c/reservation/hold-seats` → base は **develop**
+  - `develop` → `main` はリリース PR (fast-forward / linear history)
+  - `main` は protected (直 push 禁止 / 必須 CI / 1+ approval / force push禁止)
 - コミット前に `./gradlew spotlessApply` (lefthook 任意)
 
 ---
