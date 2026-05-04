@@ -23,6 +23,10 @@ import org.sqlite.SQLiteDataSource;
  *       TestDb#close()} でファイルと WAL/SHM を消す。
  *   <li>{@link #snapshot(DataSource)}: 全テーブルの行数を取り、Atomicity テストで「変化が無いこと」 を assert するのに使う。
  * </ul>
+ *
+ * <p>writable / readOnly の 2 DS を返すのは、xerial sqlite-jdbc が {@code Connection.setReadOnly(true)}
+ * を接続確立後に拒否するため。read-only Tx は構築時点で {@code SQLiteConfig.setReadOnly(true)} が立っている専用 DataSource
+ * からのみ取れる。
  */
 public final class Db {
 
@@ -39,21 +43,33 @@ public final class Db {
       // SQLite に新規作成させたいので一旦消す (Files.createTempFile は0byte ファイルを作る)
       Files.deleteIfExists(file);
 
-      SQLiteConfig config = new SQLiteConfig();
-      config.enforceForeignKeys(true);
-      config.setJournalMode(SQLiteConfig.JournalMode.WAL);
-      config.setBusyTimeout(5_000);
-      config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+      String url = "jdbc:sqlite:" + file;
 
-      SQLiteDataSource ds = new SQLiteDataSource(config);
-      ds.setUrl("jdbc:sqlite:" + file);
+      // 1) writable DS で Flyway を流して DB ファイルとスキーマを実体化させる。
+      SQLiteDataSource writable = buildDataSource(url, false);
+      Flyway.configure().dataSource(writable).locations("classpath:db/migration").load().migrate();
 
-      Flyway.configure().dataSource(ds).locations("classpath:db/migration").load().migrate();
+      // 2) read-only DS は Flyway 後に作る (SQLITE_OPEN_READONLY は対象ファイル不在で open 失敗するため)。
+      SQLiteDataSource readOnly = buildDataSource(url, true);
 
-      return new TestDb(ds, file);
+      return new TestDb(writable, readOnly, file);
     } catch (IOException e) {
       throw new IllegalStateException("Failed to create temp SQLite database", e);
     }
+  }
+
+  private static SQLiteDataSource buildDataSource(String url, boolean readOnly) {
+    SQLiteConfig config = new SQLiteConfig();
+    config.enforceForeignKeys(true);
+    config.setJournalMode(SQLiteConfig.JournalMode.WAL);
+    config.setBusyTimeout(5_000);
+    config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+    if (readOnly) {
+      config.setReadOnly(true);
+    }
+    SQLiteDataSource ds = new SQLiteDataSource(config);
+    ds.setUrl(url);
+    return ds;
   }
 
   /** 全テーブルの行数を取って Atomicity 比較用のスナップショットを作る。 */
@@ -86,8 +102,15 @@ public final class Db {
     }
   }
 
-  /** 一時 DB と関連ファイルを保持し、close で掃除する。 */
-  public record TestDb(DataSource dataSource, Path file) implements AutoCloseable {
+  /**
+   * 一時 DB と関連ファイルを保持し、close で掃除する。
+   *
+   * @param writable 通常 (REQUIRED) Tx 用の DataSource。
+   * @param readOnly READ_ONLY Tx 用の DataSource ({@code SQLiteConfig.setReadOnly(true)} 済)。
+   * @param file 一時 .db ファイルのパス。close 時に WAL/SHM とまとめて削除される。
+   */
+  public record TestDb(DataSource writable, DataSource readOnly, Path file)
+      implements AutoCloseable {
 
     @Override
     public void close() {
