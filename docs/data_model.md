@@ -16,6 +16,7 @@
 - **楽観ロック**: `version INTEGER NOT NULL DEFAULT 0` を主要集約テーブルに付与し、`UPDATE ... WHERE version = ? SET version = version + 1` で衝突検出。
 - **悲観ロック**: 高頻度衝突パス (`HoldSeats`) は `BEGIN IMMEDIATE` で書込ロックを早期取得 + `UPDATE WHERE status='AVAILABLE'` の影響行数で in-flight 衝突を検出。
 - **DELETE禁止**: マスタ系は論理削除 (`is_published`, `status='CANCELED'` 等)。FKは原則 `ON DELETE RESTRICT`。
+- **`movies.is_published` と `screenings.status` は直交**: 粒度 (映画単位 vs 上映会単位) と意味 (可視性 vs 販売状態) が異なる。「`is_published=1` の映画にのみ `status=OPEN` の screening が存在する」不変条件は書込 UseCase が cascade で守る (DB CHECK では別テーブル参照不可のため)。本案件スコープでは UnpublishMovie はスコープ外。詳細は `features.md §2` 末尾。
 
 ---
 

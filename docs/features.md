@@ -54,6 +54,31 @@
 > 課題スコープでは admin 系 (CT-06〜CT-12) は **シードSQL** で代替してもよい。
 > ただし CT-11 / CT-12 はTxの良い題材なのでせめて test だけは書く。
 
+### `movies.is_published` と `screenings.status` の関係
+
+2つのフラグは粒度が違う直交した関心事:
+
+- `movies.is_published` (boolean / 映画単位): **customer-visibility のゲート** — 一覧 / 検索 / 映画ページに出すかどうか
+- `screenings.status` (enum / 上映会単位): **販売サイクルのゲート** — `SCHEDULED` (枠だけ作成済) / `OPEN` (販売中) / `CLOSED` (販売終了 or 上映後) / `CANCELED` (中止 + 返金済)
+
+不変条件 (定常状態として):
+
+> **`is_published=1` の映画にのみ `status=OPEN` の screening が存在しうる。**
+
+この不変条件は **書込 UseCase 側で守る** (DB CHECK では映画の状態を別テーブルから参照できないため、また DDD として状態整合は集約/UseCase に置く)。具体的には、将来 UnpublishMovie 系 UC を作る場合は同 Tx 内で関連 OPEN screenings を `CANCELED` 化する責務を持たせる。
+
+#### 本案件のスコープ
+
+- **UnpublishMovie はスコープ外**。一度 PublishMovie した映画は提出時点まで `is_published=1` を維持する前提
+- → コード経路上 `is_published=1→0` を起こせない → 「`is_published=0 + status=OPEN`」状態が発生しない
+- → CT-04 / CT-05 などの Query は `is_published` を再 filter する必要がない (B の現実装で正しい)
+
+#### 将来 admin UC を本格実装する場合
+
+UnpublishMovie (仮 CT-13) を追加するときは:
+1. UseCase に「同 Tx で関連 OPEN screenings を `CANCELED` 化 + 必要なら CT-12 と同様の返金連鎖」を明記
+2. Defense-in-depth として CT-04 (`ListUpcomingScreenings`) の JOIN に `AND m.is_published = 1` を追加するかは別途判断 (書込側で守れていれば原則不要)
+
 ---
 
 ## 3. reservation (予約画面 — 座席選択) 🅲
