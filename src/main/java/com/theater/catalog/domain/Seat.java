@@ -1,5 +1,7 @@
 package com.theater.catalog.domain;
 
+import com.theater.shared.kernel.ScreenId;
+import com.theater.shared.kernel.SeatId;
 import java.util.Objects;
 
 /** Seat master data belonging to a screen. */

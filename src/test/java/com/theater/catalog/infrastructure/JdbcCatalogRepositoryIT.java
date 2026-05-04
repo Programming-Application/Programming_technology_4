@@ -3,12 +3,12 @@ package com.theater.catalog.infrastructure;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.theater.catalog.domain.MovieId;
-import com.theater.catalog.domain.ScreenId;
 import com.theater.catalog.domain.Screening;
-import com.theater.catalog.domain.ScreeningId;
 import com.theater.catalog.domain.ScreeningStatus;
 import com.theater.shared.error.OptimisticLockException;
+import com.theater.shared.kernel.MovieId;
+import com.theater.shared.kernel.ScreenId;
+import com.theater.shared.kernel.ScreeningId;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.Tx;
 import com.theater.testkit.Db;
