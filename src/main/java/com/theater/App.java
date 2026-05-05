@@ -1,10 +1,14 @@
 package com.theater;
 
+import com.theater.catalog.infrastructure.CatalogModule;
+import com.theater.identity.infrastructure.IdentityModule;
+import com.theater.ordering.infrastructure.OrderingModule;
+import com.theater.reservation.infrastructure.ReservationModule;
+import com.theater.shared.SharedModule;
 import com.theater.shared.di.Container;
-import com.theater.shared.kernel.Clock;
-import com.theater.shared.kernel.IdGenerator;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.UnitOfWork;
+import com.theater.ticketing.infrastructure.TicketingModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,16 +57,19 @@ public final class App extends Application {
     SQLiteDataSource readOnly = buildSqliteDataSource(url, true);
 
     Container container = new Container();
+    // Connection-level binding は App.bootstrap が直接保有する (両 DataSource の参照を握る必要があるため)。
     container.registerSingleton(DataSource.class, c -> writable); // writable がデフォルト
-    container.registerSingleton(Clock.class, c -> Clock.SYSTEM);
-    container.registerSingleton(IdGenerator.class, c -> IdGenerator.UUID_V4);
     container.registerSingleton(UnitOfWork.class, c -> new JdbcUnitOfWork(writable, readOnly));
 
-    // TODO(B): container.install(new CatalogModule());
-    // TODO(C): container.install(new ReservationModule());
-    // TODO(C): container.install(new OrderingModule());
-    // TODO(A): container.install(new IdentityModule());
-    // TODO(A): container.install(new TicketingModule());
+    // Clock / IdGenerator / DomainEventBus などの shared kernel binding は SharedModule。
+    // 各 BC の Repository / UseCase binding は対応する {BC}Module で行われる
+    // (中身は ID-* / RV-* / OR-* / TK-* の各 issue で埋められていく)。
+    container.install(new SharedModule());
+    container.install(new IdentityModule());
+    container.install(new CatalogModule());
+    container.install(new ReservationModule());
+    container.install(new OrderingModule());
+    container.install(new TicketingModule());
 
     Container.setGlobal(container);
     LOG.info("Application bootstrapped. db={}", dbFile.toAbsolutePath());
