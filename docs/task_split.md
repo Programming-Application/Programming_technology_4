@@ -234,28 +234,45 @@ public record ConfirmedReservationView(
 | 3 | Sprint 1 (B 先行) | catalog: `V010__catalog` / domain (Movie/Screen/Seat/Screening + status/type enum) / `CatalogQueryRepository` + `ScreeningRepository` / CT-01〜05 Query UseCase + DTO / `JdbcCatalogRepository` / `home.fxml` 骨格 | B | 2026-05-03 | (B merge) |
 | 4 | docs | `is_published` × `screenings.status` 不変条件の明文化 (UnpublishMovie はスコープ外) | A | 2026-05-04 | #4 |
 | 5 | Sprint 0 phase 2 (Q1) | cross-BC ID 4 個 (`MovieId`/`ScreenId`/`ScreeningId`/`SeatId`) を `shared/kernel` へ移動 + `Identifier` interface 新設 | A | 2026-05-04 | #5 |
+| 6 | docs | task_split.md に進捗ログ + issue 駆動 roadmap + ファイルレベル衝突回避設計 (§8〜§11) を追加 | A | 2026-05-04 | #6 |
+| 7 | Sprint 0 finalization (PLAT-01..03) | shared/eventbus + 6 BC Modules + Seeds 5 BC 分割 + App.bootstrap install 6 行 + identity/ticketing 契約 (entity + Repository interface) + UserId/TicketId/OrderId / `LayerArchTest` に Bootstrap layer 追加 | A | 2026-05-06 | #16 (closes #7 #8 #9) |
 
-### 達成済の集約マップ
+### 達成済の集約マップ (PR #16 merge 後)
 
 ```
 shared/
-├── kernel/    ✅ Money, Currency, Result, Clock, IdGenerator, Identifier, MovieId, ScreenId, ScreeningId, SeatId
+├── kernel/    ✅ Money, Currency, Result, Clock, IdGenerator, Identifier,
+│              ✅ MovieId, ScreenId, ScreeningId, SeatId, UserId, TicketId, OrderId
 ├── error/     ✅ DomainException 階層 (5 具象)
 ├── di/        ✅ Container, Module(I/F), Provider, Scope
 ├── tx/        ✅ UnitOfWork(I/F), JdbcUnitOfWork (writable+readOnly), TransactionalUseCase, Tx
-└── eventbus/  ❌ 未着手 (PLAT-01)
+├── eventbus/  ✅ DomainEvent, DomainEventBus, OutboxDomainEventBus (Tx統合テスト済)
+└── SharedModule  ✅ Clock / IdGenerator / DomainEventBus を bind
+
+identity/
+├── domain/         🟡 entity (User/Email/PasswordHash/UserRole) + UserRepository interface のみ。実装は ID-01
+├── application/    ❌ 未着手 (ID-02 RegisterUser / ID-03 Login)
+├── infrastructure/ 🟡 IdentityModule skeleton (TODO: ID-01..03 で bind 追加)
+└── ui/             ❌ 未着手 (ID-04)
 
 catalog/
 ├── domain/         ✅ 集約 + 2 Repository interface
 ├── application/    ✅ CT-01〜05 Query UC + 内部 view DTO
-├── infrastructure/ ✅ JdbcCatalogRepository (Query + Screening write)
+├── infrastructure/ ✅ JdbcCatalogRepository + CatalogModule (Repository を 2 interface に bind 済)
 └── ui/             ❌ home.fxml は骨格のみ、Controller 未実装 (CT-06)
 
-identity/    ❌ 未着手   reservation/ ❌ 未着手
-ordering/    ❌ 未着手   ticketing/   ❌ 未着手
+reservation/  🟡 ReservationModule skeleton のみ (RV-01 で Repository 実装)
+ordering/     🟡 OrderingModule skeleton のみ (OR-01 で Repository 実装)
 
-testkit/  ✅ Db / FixedClock / IncrementingIdGenerator
-          ❌ Seeds は inline 状態 (PLAT-02 で関数化予定)
+ticketing/
+├── domain/         🟡 entity (Ticket/TicketStatus) + TicketRepository interface のみ。実装は TK-01
+├── application/    ❌ 未着手 (TK-01..03)
+├── infrastructure/ 🟡 TicketingModule skeleton (TODO: TK-01..02 で bind 追加)
+└── ui/             ❌ 未着手 (TK-03)
+
+testkit/  ✅ Db / FixedClock / IncrementingIdGenerator / Seeds 5 BC 別分割 (record skeleton)
+App.bootstrap  ✅ 6 install 行 アクティブ (Shared/Identity/Catalog/Reservation/Ordering/Ticketing)
+ArchUnit       ✅ Bootstrap layer 追加 (App.java のみが infrastructure へのアクセス権)
 ```
 
 ---
@@ -272,11 +289,11 @@ testkit/  ✅ Db / FixedClock / IncrementingIdGenerator
 
 | # | タイトル | Owner | スコープ | Blocked by | Blocks |
 |---|---|---|---|---|---|
-| **PLAT-01** | `shared/eventbus` 実装 (DomainEvent / DomainEventBus / OutboxDomainEventBus) + Tx 統合テスト | A | `domain_events_outbox` への INSERT が Tx に乗ること、commit/rollback が伝搬すること | (Q1 完了済) | OR-04 |
-| **PLAT-02** | 6 つの `*Module.java` 雛形 + `App.bootstrap` の `install` 有効化 + `testkit/Seeds*.java` を BC 別に分割 | A | **Module 側**: SharedModule (DomainEventBus/UnitOfWork bind) / CatalogModule (B の既存リポジトリ bind) / 他 4 BC は空 bind() / `App.bootstrap` で 6 行の `install(...)` を**ここで全て書き切る** (以後 BC issue 側では Module ファイルだけ編集すれば足りるようにする). **Seeds 側**: `testkit/Seeds.java` は aggregator のみ、実体は `IdentitySeeds.java` / `CatalogSeeds.java` / `ReservationSeeds.java` / `OrderingSeeds.java` / `TicketingSeeds.java` の 5 BC 別ファイルに分割。各 BC issue は自 BC の Seeds ファイルだけ編集する設計 (詳細は §11) | (Q1 完了済) | ID-01, CT-06, RV-01, OR-01, TK-01 |
-| **PLAT-03** | identity / ticketing の Repository interface 雛形 + `UserId` / `TicketId` を `shared/kernel` 追加 | A | `identity/domain/UserRepository` + `ticketing/domain/TicketRepository` の interface 定義のみ。実装は ID-01 / TK-01 で | (Q1 完了済) | ID-01, TK-01 |
-| **PLAT-04** | reservation / ordering の Repository interface draft + `ReservationId` / `OrderId` を `shared/kernel` 追加 | A (draft) → C (合意) | `ReservationRepository` / `SeatStateRepository` / `OrderRepository` / `PaymentRepository` / `RefundRepository` の interface 雛形 | (Q1 完了済) | RV-01, OR-01 |
-| **PLAT-05** | cross-BC DTO 雛形 (`application/dto/*`) | A | `reservation/application/dto/ConfirmedReservationView` (OR-04 が消費) など最小セット | PLAT-04 | OR-04 |
+| ~~**PLAT-01**~~ | ✅ `shared/eventbus` 実装完了 (PR #16) | A | DomainEvent / DomainEventBus / OutboxDomainEventBus + Tx 統合テスト | — | — |
+| ~~**PLAT-02**~~ | ✅ 6 つの `*Module` + Seeds 5 BC 分割 + `App.bootstrap` install 完了 (PR #16) | A | — | — | — |
+| ~~**PLAT-03**~~ | ✅ identity / ticketing 契約 + `UserId`/`TicketId`/**`OrderId`** 追加 完了 (PR #16) | A | OrderId は本来 PLAT-04 のスコープを Ticket entity 連動で先行導入 | — | — |
+| **PLAT-04** | reservation / ordering の Repository interface + entity records + `ReservationId` を `shared/kernel` 追加 (※ `OrderId` は PR #16 で導入済のためスコープ外) | A (draft) → C (合意) | `Reservation`/`SeatState`/`Order`/`Payment`/`Refund` 各 record + 5 Repository interface 雛形 | (PR #16 完了済) | RV-01, OR-01 |
+| **PLAT-05** | cross-BC DTO 雛形 (`application/dto/*`) | A / B | `reservation/application/dto/ConfirmedReservationView` (OR-04 が消費) など最小セット | PLAT-04 | OR-04 |
 
 ### 9.2 Sprint 1 (縦串 MVP)
 
