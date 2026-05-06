@@ -261,8 +261,17 @@ catalog/
 ├── infrastructure/ ✅ JdbcCatalogRepository + CatalogModule (Repository を 2 interface に bind 済)
 └── ui/             ❌ home.fxml は骨格のみ、Controller 未実装 (CT-06)
 
-reservation/  🟡 ReservationModule skeleton のみ (RV-01 で Repository 実装)
-ordering/     🟡 OrderingModule skeleton のみ (OR-01 で Repository 実装)
+reservation/
+├── domain/         ❌ 未着手 (PLAT-04 で Reservation/SeatState record + 2 Repository interface + ReservationStatus/SeatStateStatus 追加予定)
+├── application/    ❌ 未着手 (RV-01 LoadSeatMap / RV-02 HoldSeats / RV-03 ReleaseHold / RV-04 ExpireHoldsJob)
+├── infrastructure/ 🟡 ReservationModule skeleton のみ (TODO: RV-01 で JdbcReservationRepository / JdbcSeatStateRepository を bind)
+└── ui/             ❌ 未着手 (RV-05 SeatSelectController, seat_select.fxml は骨格のみ)
+
+ordering/
+├── domain/         ❌ 未着手 (PLAT-04 で Order/Payment/Refund record + 3 Repository interface + OrderStatus/PaymentStatus 追加予定)
+├── application/    ❌ 未着手 (OR-01..06: StartCheckout / Checkout / CancelOrder / RefundOrder ほか)
+├── infrastructure/ 🟡 OrderingModule skeleton のみ (TODO: OR-01 で Repository, OR-02 で MockPaymentGateway を bind)
+└── ui/             ❌ 未着手 (OR-06 CheckoutController, checkout.fxml は骨格のみ)
 
 ticketing/
 ├── domain/         🟡 entity (Ticket/TicketStatus) + TicketRepository interface のみ。実装は TK-01
