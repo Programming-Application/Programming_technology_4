@@ -1,0 +1,29 @@
+package com.theater.reservation.domain;
+
+import com.theater.shared.kernel.ReservationId;
+import com.theater.shared.kernel.ScreeningId;
+import com.theater.shared.kernel.SeatId;
+import com.theater.shared.kernel.TicketId;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+/** Write-side repository for screening seat states. */
+public interface SeatStateRepository {
+
+  List<SeatState> findByScreening(ScreeningId screeningId);
+
+  /** RV-02 HoldSeats 用。影響行数が要求座席数と一致しなければ呼び元が衝突として扱う。 */
+  int tryHold(
+      ScreeningId screeningId,
+      List<SeatId> seats,
+      ReservationId reservationId,
+      Instant expiresAt,
+      Instant now);
+
+  void releaseByReservation(ReservationId reservationId);
+
+  void markSold(ReservationId reservationId, Map<SeatId, TicketId> seatToTicket, Instant now);
+
+  void markExpired(List<ReservationId> reservationIds);
+}
