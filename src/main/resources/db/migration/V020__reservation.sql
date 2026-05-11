@@ -27,11 +27,11 @@ CREATE INDEX idx_reservations_screening
 CREATE TABLE seat_states (
   screening_id      TEXT NOT NULL,
   seat_id           TEXT NOT NULL,
-  status            TEXT NOT NULL CHECK (status IN ('AVAILABLE','HOLD','SOLD','BLOCKED')),
+  status            TEXT NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE','HOLD','SOLD','BLOCKED')),
   reservation_id    TEXT,
   hold_expires_at   INTEGER,
   ticket_id         TEXT,
-  price             INTEGER NOT NULL CHECK (price >= 0),
+  price             INTEGER NOT NULL DEFAULT 0 CHECK (price >= 0),
   version           INTEGER NOT NULL DEFAULT 0,
   updated_at        INTEGER NOT NULL,
   PRIMARY KEY (screening_id, seat_id),
