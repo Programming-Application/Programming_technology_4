@@ -21,6 +21,9 @@ CREATE TABLE reservations (
 
 CREATE INDEX idx_reservations_user_active
   ON reservations(user_id, status, created_at);
+CREATE INDEX idx_reservations_expiring
+  ON reservations(status, expires_at)
+  WHERE status = 'HOLD';
 CREATE INDEX idx_reservations_screening
   ON reservations(screening_id);
 
