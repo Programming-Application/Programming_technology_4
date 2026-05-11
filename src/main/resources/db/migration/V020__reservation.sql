@@ -8,7 +8,7 @@ CREATE TABLE reservations (
   reservation_id  TEXT PRIMARY KEY,
   user_id         TEXT NOT NULL,
   screening_id    TEXT NOT NULL,
-  status          TEXT NOT NULL CHECK (status IN ('HOLD','CONFIRMED','CANCELED','EXPIRED')),
+  status          TEXT NOT NULL DEFAULT 'HOLD' CHECK (status IN ('HOLD','CONFIRMED','CANCELED','EXPIRED')),
   expires_at      INTEGER,
   created_at      INTEGER NOT NULL,
   updated_at      INTEGER NOT NULL,
