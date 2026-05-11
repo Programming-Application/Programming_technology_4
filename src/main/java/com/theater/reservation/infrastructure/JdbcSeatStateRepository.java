@@ -91,7 +91,8 @@ final class JdbcSeatStateRepository implements SeatStateRepository {
   }
 
   @Override
-  public void markSold(ReservationId reservationId, Map<SeatId, TicketId> seatToTicket, Instant now) {
+  public void markSold(
+      ReservationId reservationId, Map<SeatId, TicketId> seatToTicket, Instant now) {
     Objects.requireNonNull(seatToTicket, "seatToTicket");
     for (var entry : seatToTicket.entrySet()) {
       markSoldOne(reservationId, entry.getKey(), entry.getValue(), now);

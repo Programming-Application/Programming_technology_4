@@ -20,11 +20,7 @@ final class JdbcScreeningCounterRepository implements ScreeningCounterRepository
 
   @Override
   public void adjust(
-      ScreeningId screeningId,
-      int availableDelta,
-      int reservedDelta,
-      int soldDelta,
-      Instant now) {
+      ScreeningId screeningId, int availableDelta, int reservedDelta, int soldDelta, Instant now) {
     try (PreparedStatement ps =
         connection()
             .prepareStatement(

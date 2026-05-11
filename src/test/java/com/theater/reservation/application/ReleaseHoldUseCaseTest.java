@@ -80,10 +80,8 @@ class ReleaseHoldUseCaseTest {
   @Test
   void other_user_cannot_release_hold_and_state_is_unchanged() {
     assertThatThrownBy(
-            () ->
-                useCase.execute(
-                    new ReleaseHoldUseCase.Command(new UserId("user-b"), HOLD_ID)))
-        .isInstanceOf(IllegalStateTransitionException.class);
+            () -> useCase.execute(new ReleaseHoldUseCase.Command(new UserId("user-b"), HOLD_ID)))
+        .isInstanceOf(SecurityException.class);
 
     assertThat(reservationStatus(HOLD_ID)).isEqualTo(ReservationStatus.HOLD);
     assertThat(statusCounts()).containsEntry(SeatStateStatus.HOLD, 2L);
@@ -103,7 +101,8 @@ class ReleaseHoldUseCaseTest {
     assertThatThrownBy(
             () ->
                 useCase.execute(
-                    new ReleaseHoldUseCase.Command(OWNER_ID, new ReservationId("reservation-canceled"))))
+                    new ReleaseHoldUseCase.Command(
+                        OWNER_ID, new ReservationId("reservation-canceled"))))
         .isInstanceOf(IllegalStateTransitionException.class);
   }
 
@@ -132,7 +131,8 @@ class ReleaseHoldUseCaseTest {
   }
 
   private ReservationStatus reservationStatus(ReservationId id) {
-    return uow.execute(Tx.READ_ONLY, () -> useCaseReservationRepo().findById(id).orElseThrow().status());
+    return uow.execute(
+        Tx.READ_ONLY, () -> useCaseReservationRepo().findById(id).orElseThrow().status());
   }
 
   private Map<SeatStateStatus, Long> statusCounts() {

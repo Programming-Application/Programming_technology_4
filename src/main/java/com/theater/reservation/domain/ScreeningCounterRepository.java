@@ -7,9 +7,5 @@ import java.time.Instant;
 public interface ScreeningCounterRepository {
 
   void adjust(
-      ScreeningId screeningId,
-      int availableDelta,
-      int reservedDelta,
-      int soldDelta,
-      Instant now);
+      ScreeningId screeningId, int availableDelta, int reservedDelta, int soldDelta, Instant now);
 }

@@ -97,7 +97,8 @@ final class JdbcReservationRepository implements ReservationRepository {
       ps.setLong(8, reservation.version());
       ps.executeUpdate();
     } catch (SQLException e) {
-      throw new IllegalStateException("Failed to insert reservation: " + reservation.id().value(), e);
+      throw new IllegalStateException(
+          "Failed to insert reservation: " + reservation.id().value(), e);
     }
   }
 
@@ -131,7 +132,8 @@ final class JdbcReservationRepository implements ReservationRepository {
         throw new OptimisticLockException("Reservation", reservation.id().value());
       }
     } catch (SQLException e) {
-      throw new IllegalStateException("Failed to update reservation: " + reservation.id().value(), e);
+      throw new IllegalStateException(
+          "Failed to update reservation: " + reservation.id().value(), e);
     }
   }
 

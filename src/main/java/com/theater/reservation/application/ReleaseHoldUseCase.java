@@ -49,8 +49,7 @@ public final class ReleaseHoldUseCase
     var reservation =
         reservationRepo
             .findById(cmd.reservationId())
-            .orElseThrow(
-                () -> new NotFoundException("Reservation", cmd.reservationId().value()));
+            .orElseThrow(() -> new NotFoundException("Reservation", cmd.reservationId().value()));
 
     if (!reservation.userId().equals(cmd.userId())) {
       throw new SecurityException(
