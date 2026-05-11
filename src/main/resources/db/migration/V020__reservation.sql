@@ -53,7 +53,6 @@ CREATE TABLE seat_states (
       AND ticket_id IS NULL)
   ),
   FOREIGN KEY (screening_id) REFERENCES screenings(screening_id) ON DELETE RESTRICT,
-  FOREIGN KEY (screening_id, seat_id) REFERENCES seats(screen_id, seat_id) ON DELETE RESTRICT,
   FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id) ON DELETE SET NULL
 );
 
