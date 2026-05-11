@@ -176,8 +176,8 @@ class ReleaseHoldAtomicityTxTest {
     }
 
     @Override
-    public void markExpired(List<ReservationId> reservationIds) {
-      delegate.markExpired(reservationIds);
+    public void markExpired(List<ReservationId> reservationIds, Instant now) {
+      delegate.markExpired(reservationIds, now);
     }
   }
 }

@@ -99,9 +99,9 @@ final class JdbcSeatStateRepository implements SeatStateRepository {
   }
 
   @Override
-  public void markExpired(List<ReservationId> reservationIds) {
+  public void markExpired(List<ReservationId> reservationIds, Instant now) {
     Objects.requireNonNull(reservationIds, "reservationIds");
-    Instant now = Instant.now();
+    Objects.requireNonNull(now, "now");
     for (ReservationId id : reservationIds) {
       releaseByReservation(id, now);
     }
