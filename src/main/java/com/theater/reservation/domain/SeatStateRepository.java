@@ -21,9 +21,9 @@ public interface SeatStateRepository {
       Instant expiresAt,
       Instant now);
 
-  void releaseByReservation(ReservationId reservationId);
+  int releaseByReservation(ReservationId reservationId, Instant now);
 
   void markSold(ReservationId reservationId, Map<SeatId, TicketId> seatToTicket, Instant now);
 
-  void markExpired(List<ReservationId> reservationIds);
+  void markExpired(List<ReservationId> reservationIds, Instant now);
 }

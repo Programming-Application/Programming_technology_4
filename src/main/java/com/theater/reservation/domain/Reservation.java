@@ -31,4 +31,10 @@ public record Reservation(
       throw new IllegalArgumentException("HOLD status requires expiresAt");
     }
   }
+
+  public Reservation toCanceled(Instant now) {
+    Objects.requireNonNull(now, "now");
+    return new Reservation(
+        id, userId, screeningId, ReservationStatus.CANCELED, null, createdAt, now, version + 1);
+  }
 }
