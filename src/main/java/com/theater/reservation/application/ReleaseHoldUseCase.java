@@ -53,10 +53,11 @@ public final class ReleaseHoldUseCase
                 () -> new NotFoundException("Reservation", cmd.reservationId().value()));
 
     if (!reservation.userId().equals(cmd.userId())) {
-      throw new IllegalStateTransitionException(
-          "Reservation",
-          "owner=" + reservation.userId().value(),
-          "requester=" + cmd.userId().value());
+      throw new SecurityException(
+          "Reservation owner mismatch: owner="
+              + reservation.userId().value()
+              + ", requester="
+              + cmd.userId().value());
     }
     if (reservation.status() != ReservationStatus.HOLD) {
       throw new IllegalStateTransitionException(
