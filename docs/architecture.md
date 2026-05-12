@@ -65,6 +65,17 @@
 2. 非同期: `domain_events_outbox` テーブル経由の **Outbox パターン**。確定ユースケース内で同一Txにイベントを書き、別ワーカーで配信。
 3. 直接の domain クラス参照は **禁止** (パッケージ可視性で強制)。
 
+### DTO 配置規約 (cross-BC vs 内部)
+
+`application/` 配下の record / view 型は2系統に分けて配置する:
+
+| 配置 | 用途 | 例 |
+|---|---|---|
+| `<bc>/application/*View.java` / `*Summary.java` | **自 BC 内部** の表示用 / UseCase 戻り値 | catalog の `MovieSummary` / `ScreeningDetailView` |
+| `<bc>/application/dto/*.java` | **cross-BC 契約** (他 BC が消費する DTO) | reservation の `ConfirmedReservationView` (OR-04 が消費) |
+
+cross-BC DTO は **`shared/kernel` の ID 型** および **primitive 型 (`Money` 等の VO 含む)** のみで構成し、他 BC の domain クラスを参照しない (= Anti-Corruption Layer)。
+
 ---
 
 ## 4. ディレクトリ / パッケージ構成
