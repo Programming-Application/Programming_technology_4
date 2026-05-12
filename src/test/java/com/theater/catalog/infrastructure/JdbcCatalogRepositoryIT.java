@@ -3,6 +3,7 @@ package com.theater.catalog.infrastructure;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.theater.catalog.domain.Movie;
 import com.theater.catalog.domain.Screening;
 import com.theater.catalog.domain.ScreeningStatus;
 import com.theater.shared.error.OptimisticLockException;
@@ -112,6 +113,43 @@ class JdbcCatalogRepositoryIT {
   void save_when_version_is_stale_throws_optimistic_lock_exception() {
     var stale =
         uow.execute(Tx.READ_ONLY, () -> repository.findById(new ScreeningId("screening-open")))
+            .orElseThrow();
+    uow.executeVoid(Tx.REQUIRED, () -> repository.save(stale));
+
+    assertThatThrownBy(() -> uow.executeVoid(Tx.REQUIRED, () -> repository.save(stale)))
+        .isInstanceOf(OptimisticLockException.class);
+  }
+
+  @Test
+  void save_movie_updates_published_flag_and_increments_version() {
+    var hidden =
+        uow.execute(Tx.READ_ONLY, () -> repository.findMovieById(new MovieId("movie-hidden")))
+            .orElseThrow();
+    var published =
+        new Movie(
+            hidden.id(),
+            hidden.title(),
+            hidden.description(),
+            hidden.durationMinutes(),
+            true,
+            hidden.createdAt(),
+            NOW.plusSeconds(60),
+            hidden.version());
+
+    uow.executeVoid(Tx.REQUIRED, () -> repository.save(published));
+
+    var found =
+        uow.execute(Tx.READ_ONLY, () -> repository.findMovieById(new MovieId("movie-hidden")))
+            .orElseThrow();
+    assertThat(found.published()).isTrue();
+    assertThat(found.version()).isEqualTo(1);
+    assertThat(found.updatedAt()).isEqualTo(NOW.plusSeconds(60));
+  }
+
+  @Test
+  void save_movie_when_version_is_stale_throws_optimistic_lock_exception() {
+    var stale =
+        uow.execute(Tx.READ_ONLY, () -> repository.findMovieById(new MovieId("movie-hidden")))
             .orElseThrow();
     uow.executeVoid(Tx.REQUIRED, () -> repository.save(stale));
 
