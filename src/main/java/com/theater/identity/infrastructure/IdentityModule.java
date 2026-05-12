@@ -1,5 +1,6 @@
 package com.theater.identity.infrastructure;
 
+import com.theater.identity.domain.CurrentUserHolder;
 import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.shared.di.Container;
@@ -9,9 +10,9 @@ import com.theater.shared.tx.UnitOfWork;
 /**
  * identity BC の DI バインディング。
  *
- * <p>ID-01 で {@link UserRepository} と {@link PasswordHasher} を bind。 ID-03 で {@code
- * CurrentUserHolder} が追加される。UseCase の bind は ArchUnit 制約 (Infrastructure → Application を 禁ずる)
- * を満たすため Bootstrap 層 ({@code App.bootstrap}) で行う。
+ * <p>ID-01 で {@link UserRepository} と {@link PasswordHasher}、ID-03 で {@link CurrentUserHolder} を
+ * bind。 UseCase の bind は ArchUnit 制約 (Infrastructure → Application を禁ずる) を満たすため Bootstrap 層 ({@code
+ * App.bootstrap}) で行う。
  */
 public final class IdentityModule implements Module {
 
@@ -20,6 +21,6 @@ public final class IdentityModule implements Module {
     container.registerSingleton(
         UserRepository.class, c -> new JdbcUserRepository(c.resolve(UnitOfWork.class)));
     container.registerSingleton(PasswordHasher.class, c -> new BcryptPasswordHasher());
-    // TODO(ID-03): CurrentUserHolder
+    container.registerSingleton(CurrentUserHolder.class, c -> new CurrentUserHolder());
   }
 }

@@ -1,7 +1,10 @@
 package com.theater;
 
 import com.theater.catalog.infrastructure.CatalogModule;
+import com.theater.identity.application.LoginUseCase;
+import com.theater.identity.application.LogoutUseCase;
 import com.theater.identity.application.RegisterUserUseCase;
+import com.theater.identity.domain.CurrentUserHolder;
 import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
@@ -103,6 +106,16 @@ public final class App extends Application {
                 c.resolve(PasswordHasher.class),
                 c.resolve(Clock.class),
                 c.resolve(IdGenerator.class)));
+    container.registerSingleton(
+        LoginUseCase.class,
+        c ->
+            new LoginUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(UserRepository.class),
+                c.resolve(PasswordHasher.class),
+                c.resolve(CurrentUserHolder.class)));
+    container.registerSingleton(
+        LogoutUseCase.class, c -> new LogoutUseCase(c.resolve(CurrentUserHolder.class)));
   }
 
   private static SQLiteDataSource buildSqliteDataSource(String url, boolean readOnly) {
