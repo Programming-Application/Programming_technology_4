@@ -9,6 +9,11 @@ import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
 import com.theater.ordering.infrastructure.OrderingModule;
+import com.theater.reservation.application.HoldSeatsUseCase;
+import com.theater.reservation.application.LoadSeatMapUseCase;
+import com.theater.reservation.domain.ReservationRepository;
+import com.theater.reservation.domain.ScreeningCounterRepository;
+import com.theater.reservation.domain.SeatStateRepository;
 import com.theater.reservation.infrastructure.ReservationModule;
 import com.theater.shared.SharedModule;
 import com.theater.shared.bootstrap.DemoDataLoader;
@@ -116,6 +121,21 @@ public final class App extends Application {
                 c.resolve(CurrentUserHolder.class)));
     container.registerSingleton(
         LogoutUseCase.class, c -> new LogoutUseCase(c.resolve(CurrentUserHolder.class)));
+    container.registerSingleton(
+        LoadSeatMapUseCase.class,
+        c ->
+            new LoadSeatMapUseCase(
+                c.resolve(UnitOfWork.class), c.resolve(SeatStateRepository.class)));
+    container.registerSingleton(
+        HoldSeatsUseCase.class,
+        c ->
+            new HoldSeatsUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(ReservationRepository.class),
+                c.resolve(SeatStateRepository.class),
+                c.resolve(ScreeningCounterRepository.class),
+                c.resolve(Clock.class),
+                c.resolve(IdGenerator.class)));
   }
 
   private static SQLiteDataSource buildSqliteDataSource(String url, boolean readOnly) {

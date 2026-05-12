@@ -2,6 +2,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <!-- Owner: Person C. RV-01/02. -->
@@ -17,5 +18,17 @@
   </HBox>
   <Label fx:id="screeningLabel"/>
   <Label fx:id="userLabel"/>
-  <Label text="Seat Select (TODO)"/>
+  <Label text="SCREEN" maxWidth="Infinity"
+         style="-fx-alignment: center; -fx-background-color: #eeeeee; -fx-padding: 8;"/>
+  <GridPane fx:id="seatGrid" hgap="8" vgap="8"/>
+  <HBox spacing="12">
+    <Label text="AVAILABLE" style="-fx-text-fill: #2e7d32;"/>
+    <Label text="SELECTED" style="-fx-text-fill: #1565c0;"/>
+    <Label text="HOLD" style="-fx-text-fill: #f9a825;"/>
+    <Label text="SOLD" style="-fx-text-fill: #757575;"/>
+    <Label text="BLOCKED" style="-fx-text-fill: #212121;"/>
+  </HBox>
+  <Label fx:id="errorLabel" style="-fx-text-fill: #c62828;"/>
+  <Button fx:id="reserveButton" text="予約する" maxWidth="Infinity"
+          onAction="#onReserveClicked"/>
 </VBox>
