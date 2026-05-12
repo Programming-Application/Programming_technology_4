@@ -10,6 +10,7 @@ import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
 import com.theater.ordering.application.CheckoutUseCase;
+import com.theater.ordering.application.StartCheckoutUseCase;
 import com.theater.ordering.domain.OrderRepository;
 import com.theater.ordering.domain.PaymentGateway;
 import com.theater.ordering.domain.PaymentRepository;
@@ -161,6 +162,14 @@ public final class App extends Application {
                 c.resolve(ReservationRepository.class),
                 c.resolve(SeatStateRepository.class),
                 c.resolve(ScreeningCounterRepository.class),
+                c.resolve(Clock.class)));
+    container.registerSingleton(
+        StartCheckoutUseCase.class,
+        c ->
+            new StartCheckoutUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(ReservationRepository.class),
+                c.resolve(SeatStateRepository.class),
                 c.resolve(Clock.class)));
     container.registerSingleton(
         CheckoutUseCase.class,
