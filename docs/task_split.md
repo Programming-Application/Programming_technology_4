@@ -236,8 +236,10 @@ public record ConfirmedReservationView(
 | 5 | Sprint 0 phase 2 (Q1) | cross-BC ID 4 個 (`MovieId`/`ScreenId`/`ScreeningId`/`SeatId`) を `shared/kernel` へ移動 + `Identifier` interface 新設 | A | 2026-05-04 | #5 |
 | 6 | docs | task_split.md に進捗ログ + issue 駆動 roadmap + ファイルレベル衝突回避設計 (§8〜§11) を追加 | A | 2026-05-04 | #6 |
 | 7 | Sprint 0 finalization (PLAT-01..03) | shared/eventbus + 6 BC Modules + Seeds 5 BC 分割 + App.bootstrap install 6 行 + identity/ticketing 契約 (entity + Repository interface) + UserId/TicketId/OrderId / `LayerArchTest` に Bootstrap layer 追加 | A | 2026-05-06 | #16 (closes #7 #8 #9) |
+| 8 | PLAT-04 | reservation/ordering の domain 完成: `Reservation`/`SeatState`/`ReservationStatus`/`SeatStateStatus` + `Order`/`Payment`/`Refund`/`OrderStatus`/`PaymentStatus`/`PaymentId` (内部) + 5 Repository interface + `ReservationId` (`shared/kernel`) + 4 unit テスト | B | 2026-05-09 | #18 (closes #10) |
+| 9 | RV-01 (8割) + RV-03 | reservation 実装: `V020__reservation.sql` (reservations + seat_states + CHECK 多段 + Index 4) / `JdbcReservationRepository` / `JdbcSeatStateRepository` / `JdbcScreeningCounterRepository` + `ScreeningCounterRepository` interface / `ReservationModule` で 3 つ bind / `ReleaseHoldUseCase` + Authorization/Atomicity テスト | B | 2026-05-11 | #19 (closes #15、#13 は 8割完了 — Seeds と Repository IT が未) |
 
-### 達成済の集約マップ (PR #16 merge 後)
+### 達成済の集約マップ (PR #19 merge 後)
 
 ```
 shared/
@@ -262,16 +264,20 @@ catalog/
 └── ui/             ❌ home.fxml は骨格のみ、Controller 未実装 (CT-06)
 
 reservation/
-├── domain/         ❌ 未着手 (PLAT-04 で Reservation/SeatState record + 2 Repository interface + ReservationStatus/SeatStateStatus 追加予定)
-├── application/    ❌ 未着手 (RV-01 LoadSeatMap / RV-02 HoldSeats / RV-03 ReleaseHold / RV-04 ExpireHoldsJob)
-├── infrastructure/ 🟡 ReservationModule skeleton のみ (TODO: RV-01 で JdbcReservationRepository / JdbcSeatStateRepository を bind)
+├── domain/         ✅ Reservation/SeatState record + ReservationStatus/SeatStateStatus enum + 3 Repository interface (Reservation/SeatState/ScreeningCounter)
+├── application/    🟡 ReleaseHoldUseCase 完了 (RV-03)。LoadSeatMap (RV-01 残) / HoldSeats (RV-02) / ExpireHoldsJob (RV-04) 未
+├── infrastructure/ ✅ Jdbc{Reservation,SeatState,ScreeningCounter}Repository 実装 + ReservationModule で 3 bind。**ただし `tryHold` は interface のみ・実装は RV-02 で**
 └── ui/             ❌ 未着手 (RV-05 SeatSelectController, seat_select.fxml は骨格のみ)
 
+(※ RV-01 #13 は実態 8 割完了。残作業 = `testkit/ReservationSeeds` のヘルパ + Repository IT (CHECK / UNIQUE / FK の SQL 制約検証)。`RV-01b` として別 issue 化予定。)
+
 ordering/
-├── domain/         ❌ 未着手 (PLAT-04 で Order/Payment/Refund record + 3 Repository interface + OrderStatus/PaymentStatus 追加予定)
+├── domain/         ✅ Order/Payment/Refund record + OrderStatus/PaymentStatus enum + PaymentId (内部) + 3 Repository interface (Order/Payment/Refund) + unit テスト 2 件
 ├── application/    ❌ 未着手 (OR-01..06: StartCheckout / Checkout / CancelOrder / RefundOrder ほか)
-├── infrastructure/ 🟡 OrderingModule skeleton のみ (TODO: OR-01 で Repository, OR-02 で MockPaymentGateway を bind)
+├── infrastructure/ 🟡 OrderingModule skeleton のみ (TODO: OR-01 で Jdbc Repository, OR-02 で MockPaymentGateway を bind)
 └── ui/             ❌ 未着手 (OR-06 CheckoutController, checkout.fxml は骨格のみ)
+
+(※ V030 マイグレーションは placeholder のまま。OR-01 で実 SQL に置換予定。)
 
 ticketing/
 ├── domain/         🟡 entity (Ticket/TicketStatus) + TicketRepository interface のみ。実装は TK-01
@@ -301,8 +307,8 @@ ArchUnit       ✅ Bootstrap layer 追加 (App.java のみが infrastructure へ
 | ~~**PLAT-01**~~ | ✅ `shared/eventbus` 実装完了 (PR #16) | A | DomainEvent / DomainEventBus / OutboxDomainEventBus + Tx 統合テスト | — | — |
 | ~~**PLAT-02**~~ | ✅ 6 つの `*Module` + Seeds 5 BC 分割 + `App.bootstrap` install 完了 (PR #16) | A | — | — | — |
 | ~~**PLAT-03**~~ | ✅ identity / ticketing 契約 + `UserId`/`TicketId`/**`OrderId`** 追加 完了 (PR #16) | A | OrderId は本来 PLAT-04 のスコープを Ticket entity 連動で先行導入 | — | — |
-| **PLAT-04** | reservation / ordering の Repository interface + entity records + `ReservationId` を `shared/kernel` 追加 (※ `OrderId` は PR #16 で導入済のためスコープ外) | A (draft) → C (合意) | `Reservation`/`SeatState`/`Order`/`Payment`/`Refund` 各 record + 5 Repository interface 雛形 | (PR #16 完了済) | RV-01, OR-01 |
-| **PLAT-05** | cross-BC DTO 雛形 (`application/dto/*`) | A / B | `reservation/application/dto/ConfirmedReservationView` (OR-04 が消費) など最小セット | PLAT-04 | OR-04 |
+| ~~**PLAT-04**~~ | ✅ reservation / ordering 契約 + `ReservationId` 追加 完了 (PR #18 / B が pick up) | A (draft) → B 実装 | — | — | — |
+| **PLAT-05** | cross-BC DTO 雛形 (`application/dto/*`) | A / B | `reservation/application/dto/ConfirmedReservationView` (OR-04 が消費) など最小セット | (PLAT-04 完了済) | OR-04 |
 
 ### 9.2 Sprint 1 (縦串 MVP)
 
@@ -326,9 +332,10 @@ ArchUnit       ✅ Bootstrap layer 追加 (App.java のみが infrastructure へ
 
 | # | タイトル | Owner | スコープ | Blocked by | Blocks |
 |---|---|---|---|---|---|
-| **RV-01** | `V020__reservation` + reservation domain + `JdbcSeatStateRepository` / `JdbcReservationRepository` | C | reservations + seat_states テーブル + 多段 CHECK 制約 + 集約 + Repository IT (CHECK / FK / UNIQUE 検証) | PLAT-02, PLAT-04 | RV-02, RV-03, RV-04, OR-01 |
-| **RV-02** | RV-01 LoadSeatMap (Query) + RV-02 HoldSeats (`BEGIN IMMEDIATE` + 多層防御) + ACID 4 要件テスト + 同時実行テスト | C | `UPDATE seat_states WHERE status='AVAILABLE'` の影響行数判定 / 100 並列での衝突解消 / Atomicity / Consistency / Isolation / Durability 全部 | RV-01 | RV-03, RV-05, OR-04 |
-| **RV-03** | RV-03 ReleaseHold + テスト | C | 自分の予約のみ解放可 / 状態遷移検証 | RV-02 | (UI) |
+| ~~**RV-01**~~ | 🟡 `V020__reservation` + reservation domain + Repository 実装 8 割完了 (PR #18 #19 / B が pick up)。残: `ReservationSeeds` + Repository IT | C → B 実装 | (PR #18 / #19 で大半完了) | RV-01b で残作業継続 |  |
+| **RV-01b** | RV-01 残作業: `testkit/ReservationSeeds` のヘルパ + reservation/infrastructure の Repository IT | A / B / C | `holdReservation` / `seatStateAvailable` 等 seed ヘルパ + Jdbc{Reservation,SeatState}Repository の CHECK / UNIQUE / FK / 楽観ロック検証 IT | (PR #19 完了済) | RV-02 の前提として推奨 |
+| **RV-02** | RV-01 LoadSeatMap (Query) + RV-02 HoldSeats (`BEGIN IMMEDIATE` + 多層防御) + ACID 4 要件テスト + 同時実行テスト | C | `UPDATE seat_states WHERE status='AVAILABLE'` の影響行数判定 / 100 並列での衝突解消 / Atomicity / Consistency / Isolation / Durability 全部 | RV-01 / 推奨 RV-01b | RV-05, OR-04 |
+| ~~**RV-03**~~ | ✅ ReleaseHold + Authorization + Atomicity テスト 完了 (PR #19 / B が pick up) | C → B 実装 | — | — | — |
 | **RV-04** | RV-05 ExpireHolds Job + テスト | C | 期限切れ HOLD を EXPIRED に / seat_states を AVAILABLE に / **冪等** | RV-02 | (運用) |
 | **RV-05** | seat_select.fxml Controller + UseCase wire (UI 動作確認) | C | 座席グリッド描画 + クリックで HOLD | RV-02 | (UI 統合) |
 
