@@ -2,6 +2,7 @@ package com.theater.catalog.infrastructure;
 
 import com.theater.catalog.domain.CatalogQueryRepository;
 import com.theater.catalog.domain.Movie;
+import com.theater.catalog.domain.MovieRepository;
 import com.theater.catalog.domain.Screen;
 import com.theater.catalog.domain.Screening;
 import com.theater.catalog.domain.ScreeningRepository;
@@ -23,7 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** JDBC implementation for catalog repositories. */
-final class JdbcCatalogRepository implements CatalogQueryRepository, ScreeningRepository {
+final class JdbcCatalogRepository
+    implements CatalogQueryRepository, ScreeningRepository, MovieRepository {
 
   private final UnitOfWork uow;
 
@@ -80,6 +82,65 @@ final class JdbcCatalogRepository implements CatalogQueryRepository, ScreeningRe
       }
     } catch (SQLException e) {
       throw new IllegalStateException("Failed to find movie: " + id.value(), e);
+    }
+  }
+
+  @Override
+  public void save(Movie movie) {
+    Objects.requireNonNull(movie, "movie");
+    if (findMovieById(movie.id()).isPresent()) {
+      update(movie);
+    } else {
+      insert(movie);
+    }
+  }
+
+  private void insert(Movie movie) {
+    try (PreparedStatement ps =
+        connection()
+            .prepareStatement(
+                """
+                INSERT INTO movies(
+                  movie_id, title, description, duration_minutes, is_published,
+                  created_at, updated_at, version)
+                VALUES (?,?,?,?,?,?,?,?)
+                """)) {
+      bindMovie(ps, movie);
+      ps.setLong(8, movie.version());
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to insert movie: " + movie.id().value(), e);
+    }
+  }
+
+  private void update(Movie movie) {
+    try (PreparedStatement ps =
+        connection()
+            .prepareStatement(
+                """
+                UPDATE movies
+                   SET title = ?,
+                       description = ?,
+                       duration_minutes = ?,
+                       is_published = ?,
+                       updated_at = ?,
+                       version = version + 1
+                 WHERE movie_id = ?
+                   AND version = ?
+                """)) {
+      ps.setString(1, movie.title());
+      ps.setString(2, movie.description());
+      ps.setInt(3, movie.durationMinutes());
+      ps.setInt(4, toInt(movie.published()));
+      ps.setLong(5, toMillis(movie.updatedAt()));
+      ps.setString(6, movie.id().value());
+      ps.setLong(7, movie.version());
+      int updated = ps.executeUpdate();
+      if (updated != 1) {
+        throw new OptimisticLockException("Movie", movie.id().value());
+      }
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to update movie: " + movie.id().value(), e);
     }
   }
 
@@ -415,6 +476,16 @@ final class JdbcCatalogRepository implements CatalogQueryRepository, ScreeningRe
     ps.setLong(13, toMillis(screening.lastUpdated()));
     ps.setLong(14, toMillis(screening.createdAt()));
     ps.setLong(15, toMillis(screening.updatedAt()));
+  }
+
+  private static void bindMovie(PreparedStatement ps, Movie movie) throws SQLException {
+    ps.setString(1, movie.id().value());
+    ps.setString(2, movie.title());
+    ps.setString(3, movie.description());
+    ps.setInt(4, movie.durationMinutes());
+    ps.setInt(5, toInt(movie.published()));
+    ps.setLong(6, toMillis(movie.createdAt()));
+    ps.setLong(7, toMillis(movie.updatedAt()));
   }
 
   private Connection connection() {
