@@ -1,5 +1,6 @@
 package com.theater.shared;
 
+import com.theater.shared.bootstrap.DemoDataLoader;
 import com.theater.shared.di.Container;
 import com.theater.shared.di.Module;
 import com.theater.shared.eventbus.DomainEventBus;
@@ -24,5 +25,8 @@ public final class SharedModule implements Module {
     container.registerSingleton(
         DomainEventBus.class,
         c -> new OutboxDomainEventBus(c.resolve(UnitOfWork.class), c.resolve(IdGenerator.class)));
+    container.registerSingleton(
+        DemoDataLoader.class,
+        c -> new DemoDataLoader(c.resolve(UnitOfWork.class), c.resolve(Clock.class)));
   }
 }

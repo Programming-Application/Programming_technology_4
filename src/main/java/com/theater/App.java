@@ -5,6 +5,7 @@ import com.theater.identity.infrastructure.IdentityModule;
 import com.theater.ordering.infrastructure.OrderingModule;
 import com.theater.reservation.infrastructure.ReservationModule;
 import com.theater.shared.SharedModule;
+import com.theater.shared.bootstrap.DemoDataLoader;
 import com.theater.shared.di.Container;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.UnitOfWork;
@@ -72,6 +73,7 @@ public final class App extends Application {
     container.install(new TicketingModule());
 
     Container.setGlobal(container);
+    container.resolve(DemoDataLoader.class).loadIfEmpty();
     LOG.info("Application bootstrapped. db={}", dbFile.toAbsolutePath());
   }
 
