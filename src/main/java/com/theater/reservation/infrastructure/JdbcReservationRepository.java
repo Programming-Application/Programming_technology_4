@@ -74,6 +74,37 @@ final class JdbcReservationRepository implements ReservationRepository {
   }
 
   @Override
+  public List<ReservationId> findExpiring(Instant now, int limit) {
+    Objects.requireNonNull(now, "now");
+    if (limit <= 0) {
+      throw new IllegalArgumentException("limit must be positive");
+    }
+    try (PreparedStatement ps =
+        connection()
+            .prepareStatement(
+                """
+                SELECT reservation_id
+                  FROM reservations
+                 WHERE status = 'HOLD'
+                   AND expires_at < ?
+                 ORDER BY expires_at, reservation_id
+                 LIMIT ?
+                """)) {
+      ps.setLong(1, toMillis(now));
+      ps.setInt(2, limit);
+      List<ReservationId> ids = new ArrayList<>();
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          ids.add(new ReservationId(rs.getString("reservation_id")));
+        }
+      }
+      return ids;
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to find expiring reservations", e);
+    }
+  }
+
+  @Override
   public void save(Reservation reservation) {
     Objects.requireNonNull(reservation, "reservation");
     if (findById(reservation.id()).isPresent()) {
