@@ -36,6 +36,7 @@ dependencies {
     implementation(libs.sqlite.jdbc)
     implementation(libs.flyway.core)
     implementation(libs.slf4j.api)
+    implementation(libs.bcrypt)
     runtimeOnly(libs.logback.classic)
 
     testImplementation(platform(libs.junit.bom))
