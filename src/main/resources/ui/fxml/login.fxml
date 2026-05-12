@@ -1,8 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
-<!-- Owner: Person A. ID-02 Login. See docs/features.md §1. -->
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<!-- Owner: Person A. ID-03 Login / ID-04 UI. -->
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      spacing="8" prefWidth="400" prefHeight="240">
-  <Label text="Login (TODO)"/>
+      fx:controller="com.theater.identity.ui.LoginController"
+      spacing="12" alignment="CENTER" prefWidth="400" prefHeight="320">
+  <padding>
+    <Insets top="32" right="32" bottom="32" left="32"/>
+  </padding>
+  <Label text="ログイン" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+  <VBox spacing="4">
+    <Label text="メールアドレス"/>
+    <TextField fx:id="emailField" promptText="alice@example.com"/>
+  </VBox>
+
+  <VBox spacing="4">
+    <Label text="パスワード"/>
+    <PasswordField fx:id="passwordField" promptText="********"/>
+  </VBox>
+
+  <Label fx:id="errorLabel" style="-fx-text-fill: red;" wrapText="true"/>
+
+  <Button fx:id="loginButton" text="ログイン" maxWidth="Infinity"
+          onAction="#onLoginClicked" defaultButton="true"/>
+
+  <HBox spacing="4" alignment="CENTER">
+    <Label text="アカウントをお持ちでない方は"/>
+    <Hyperlink text="新規登録" onAction="#onRegisterLinkClicked"/>
+  </HBox>
 </VBox>
