@@ -55,4 +55,21 @@ public record Order(
       throw new IllegalArgumentException("CANCELED order requires canceledAt");
     }
   }
+
+  public Order confirm(Instant now) {
+    Objects.requireNonNull(now, "now");
+    return new Order(
+        id,
+        userId,
+        screeningId,
+        reservationId,
+        totalAmount,
+        PaymentStatus.PAID,
+        OrderStatus.CONFIRMED,
+        now,
+        canceledAt,
+        createdAt,
+        now,
+        version + 1);
+  }
 }
