@@ -244,6 +244,11 @@ class HoldSeatsAtomicityTxTest {
     public void markExpired(List<ReservationId> ids, Instant now) {
       delegate.markExpired(ids, now);
     }
+
+    @Override
+    public int releaseSoldByReservation(ReservationId rid, Instant now) {
+      return delegate.releaseSoldByReservation(rid, now);
+    }
   }
 
   private static final class ThrowOnAdjustScreeningCounterRepository

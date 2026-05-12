@@ -286,6 +286,11 @@ final class CheckoutUseCaseTest {
     public void markExpired(List<ReservationId> reservationIds, Instant now) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int releaseSoldByReservation(ReservationId reservationId, Instant now) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   private static final class FakeOrderRepository implements OrderRepository {
@@ -347,6 +352,11 @@ final class CheckoutUseCaseTest {
 
     @Override
     public void markUsed(TicketId id, Instant usedAt) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int cancelByOrderId(com.theater.shared.kernel.OrderId orderId, Instant canceledAt) {
       throw new UnsupportedOperationException();
     }
   }

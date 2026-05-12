@@ -72,4 +72,21 @@ public record Order(
         now,
         version + 1);
   }
+
+  public Order cancel(Instant now) {
+    Objects.requireNonNull(now, "now");
+    return new Order(
+        id,
+        userId,
+        screeningId,
+        reservationId,
+        totalAmount,
+        PaymentStatus.REFUNDED,
+        OrderStatus.CANCELED,
+        purchasedAt,
+        now,
+        createdAt,
+        now,
+        version + 1);
+  }
 }
