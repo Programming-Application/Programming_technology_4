@@ -7,6 +7,7 @@ import com.theater.shared.eventbus.DomainEventBus;
 import com.theater.shared.eventbus.OutboxDomainEventBus;
 import com.theater.shared.kernel.Clock;
 import com.theater.shared.kernel.IdGenerator;
+import com.theater.shared.session.CurrentSelection;
 import com.theater.shared.tx.UnitOfWork;
 
 /**
@@ -25,6 +26,7 @@ public final class SharedModule implements Module {
     container.registerSingleton(
         DomainEventBus.class,
         c -> new OutboxDomainEventBus(c.resolve(UnitOfWork.class), c.resolve(IdGenerator.class)));
+    container.registerSingleton(CurrentSelection.class, c -> new CurrentSelection());
     container.registerSingleton(
         DemoDataLoader.class,
         c -> new DemoDataLoader(c.resolve(UnitOfWork.class), c.resolve(Clock.class)));
