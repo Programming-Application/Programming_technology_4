@@ -1,12 +1,17 @@
 package com.theater;
 
 import com.theater.catalog.infrastructure.CatalogModule;
+import com.theater.identity.application.RegisterUserUseCase;
+import com.theater.identity.domain.PasswordHasher;
+import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
 import com.theater.ordering.infrastructure.OrderingModule;
 import com.theater.reservation.infrastructure.ReservationModule;
 import com.theater.shared.SharedModule;
 import com.theater.shared.bootstrap.DemoDataLoader;
 import com.theater.shared.di.Container;
+import com.theater.shared.kernel.Clock;
+import com.theater.shared.kernel.IdGenerator;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.UnitOfWork;
 import com.theater.ticketing.infrastructure.TicketingModule;
@@ -72,9 +77,32 @@ public final class App extends Application {
     container.install(new OrderingModule());
     container.install(new TicketingModule());
 
+    // UseCase (Application 層) の bind は Bootstrap で行う。
+    // BC の Module からは Application を参照できない (ArchUnit 制約) ため。
+    registerUseCases(container);
+
     Container.setGlobal(container);
     container.resolve(DemoDataLoader.class).loadIfEmpty();
     LOG.info("Application bootstrapped. db={}", dbFile.toAbsolutePath());
+  }
+
+  /**
+   * UseCase (Application 層) の DI バインディング。
+   *
+   * <p>各 BC の {@code *Module} は infrastructure 配下なので、ArchUnit の Layered ルール (Application may only
+   * be accessed by [UI, Bootstrap]) により UseCase クラスを参照できない。 そのため UseCase の bind は本メソッド (= Bootstrap
+   * 層) に集約する。
+   */
+  private static void registerUseCases(Container container) {
+    container.registerSingleton(
+        RegisterUserUseCase.class,
+        c ->
+            new RegisterUserUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(UserRepository.class),
+                c.resolve(PasswordHasher.class),
+                c.resolve(Clock.class),
+                c.resolve(IdGenerator.class)));
   }
 
   private static SQLiteDataSource buildSqliteDataSource(String url, boolean readOnly) {
