@@ -43,8 +43,11 @@
 ## クイックスタート
 
 ### 必要なもの
-- Java 17 (Temurin 推奨。`./gradlew` がツールチェインを自動取得します)
+- Java 17 (Temurin 推奨)
 - Git
+
+> Gradle 8.7 は Java 25 で起動すると `25.0.2` というエラーで停止することがあります。
+> `./gradlew` 自体を Java 17 で起動してください。
 
 ### セットアップ
 
@@ -54,9 +57,17 @@ cd theater
 ./gradlew build
 ```
 
+macOS で Java 17 と Java 25 が両方入っている場合:
+
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+./gradlew build
+```
+
 ### よく使うコマンド
 
 ```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 17) # Java 25 が既定の場合のみ
 ./gradlew run                     # JavaFX アプリを起動
 ./gradlew check                   # lint + 全テスト + カバレッジ
 ./gradlew spotlessApply           # 整形 (コミット前に必ず)

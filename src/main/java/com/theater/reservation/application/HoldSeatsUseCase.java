@@ -83,28 +83,28 @@ public final class HoldSeatsUseCase
   protected Result handle(Command cmd) {
     Instant now = clock.now();
     Instant expiresAt = now.plus(holdDuration);
-    ReservationId rid = new ReservationId(idGen.newId());
+    ReservationId reservationId = new ReservationId(idGen.newId());
 
-    // 1. Reservation を先に INSERT (FK 制約を満たす + Tx の最初の書込でライトロック取得)
     reservationRepo.save(
         new Reservation(
-            rid, cmd.userId(), cmd.screeningId(), ReservationStatus.HOLD, expiresAt, now, now, 0));
+            reservationId,
+            cmd.userId(),
+            cmd.screeningId(),
+            ReservationStatus.HOLD,
+            expiresAt,
+            now,
+            now,
+            0));
 
-    // 2. 座席を HOLD に更新。SELECT なしで直接 UPDATE → 衝突は影響行数で検出
-    int affected = seatStateRepo.tryHold(cmd.screeningId(), cmd.seats(), rid, expiresAt, now);
+    int affected =
+        seatStateRepo.tryHold(cmd.screeningId(), cmd.seats(), reservationId, expiresAt, now);
     if (affected != cmd.seats().size()) {
       throw new ConflictException(
           "Some seats are not AVAILABLE: requested=" + cmd.seats().size() + " held=" + affected);
     }
 
-    // 3. screenings の集計値を同 Tx 内で更新
-    screeningCounterRepo.adjust(
-        cmd.screeningId(),
-        -cmd.seats().size(), // available -=
-        +cmd.seats().size(), // reserved +=
-        0,
-        now);
+    screeningCounterRepo.adjust(cmd.screeningId(), -cmd.seats().size(), cmd.seats().size(), 0, now);
 
-    return new Result(rid, expiresAt);
+    return new Result(reservationId, expiresAt);
   }
 }
