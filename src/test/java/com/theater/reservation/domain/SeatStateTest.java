@@ -21,7 +21,24 @@ class SeatStateTest {
   }
 
   @Test
-  void hold_status_requires_reservation_and_expiry_without_ticket() {
+  void hold_status_without_reservation_id_throws() {
+    assertThatThrownBy(
+            () ->
+                new SeatState(
+                    new ScreeningId("s-1"),
+                    new SeatId("A-1"),
+                    SeatStateStatus.HOLD,
+                    null,
+                    NOW.plusSeconds(600),
+                    null,
+                    1500,
+                    0,
+                    NOW))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void hold_status_with_ticket_id_throws() {
     assertThatThrownBy(
             () ->
                 new SeatState(
@@ -31,6 +48,23 @@ class SeatStateTest {
                     new ReservationId("r-1"),
                     NOW.plusSeconds(600),
                     new TicketId("t-1"),
+                    1500,
+                    0,
+                    NOW))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void available_with_reservation_id_throws() {
+    assertThatThrownBy(
+            () ->
+                new SeatState(
+                    new ScreeningId("s-1"),
+                    new SeatId("A-1"),
+                    SeatStateStatus.AVAILABLE,
+                    new ReservationId("r-1"),
+                    null,
+                    null,
                     1500,
                     0,
                     NOW))
