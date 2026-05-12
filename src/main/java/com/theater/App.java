@@ -1,5 +1,6 @@
 package com.theater;
 
+import com.theater.catalog.domain.CatalogQueryRepository;
 import com.theater.catalog.infrastructure.CatalogModule;
 import com.theater.identity.application.LoginUseCase;
 import com.theater.identity.application.LogoutUseCase;
@@ -8,6 +9,10 @@ import com.theater.identity.domain.CurrentUserHolder;
 import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
+import com.theater.ordering.application.CheckoutUseCase;
+import com.theater.ordering.domain.OrderRepository;
+import com.theater.ordering.domain.PaymentGateway;
+import com.theater.ordering.domain.PaymentRepository;
 import com.theater.ordering.infrastructure.OrderingModule;
 import com.theater.reservation.application.ExpireHoldsJob;
 import com.theater.reservation.application.HoldSeatsUseCase;
@@ -19,10 +24,12 @@ import com.theater.reservation.infrastructure.ReservationModule;
 import com.theater.shared.SharedModule;
 import com.theater.shared.bootstrap.DemoDataLoader;
 import com.theater.shared.di.Container;
+import com.theater.shared.eventbus.DomainEventBus;
 import com.theater.shared.kernel.Clock;
 import com.theater.shared.kernel.IdGenerator;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.UnitOfWork;
+import com.theater.ticketing.domain.TicketRepository;
 import com.theater.ticketing.infrastructure.TicketingModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -155,6 +162,23 @@ public final class App extends Application {
                 c.resolve(SeatStateRepository.class),
                 c.resolve(ScreeningCounterRepository.class),
                 c.resolve(Clock.class)));
+    container.registerSingleton(
+        CheckoutUseCase.class,
+        c ->
+            new CheckoutUseCase(
+                c.resolve(UnitOfWork.class),
+                new CheckoutUseCase.Repositories(
+                    c.resolve(ReservationRepository.class),
+                    c.resolve(SeatStateRepository.class),
+                    c.resolve(OrderRepository.class),
+                    c.resolve(PaymentRepository.class),
+                    c.resolve(TicketRepository.class),
+                    c.resolve(ScreeningCounterRepository.class),
+                    c.resolve(CatalogQueryRepository.class)),
+                new CheckoutUseCase.Services(
+                    c.resolve(PaymentGateway.class), c.resolve(DomainEventBus.class)),
+                c.resolve(Clock.class),
+                c.resolve(IdGenerator.class)));
   }
 
   private static void startExpireHoldsScheduler(Container container) {
