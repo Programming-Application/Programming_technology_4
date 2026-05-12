@@ -2,14 +2,22 @@ package com.theater.ticketing.infrastructure;
 
 import com.theater.shared.di.Container;
 import com.theater.shared.di.Module;
+import com.theater.shared.tx.UnitOfWork;
+import com.theater.ticketing.domain.TicketRepository;
 
-/** ticketing BC の DI バインディング (skeleton)。TK-01 で TicketRepository を bind、TK-02 で UseCase を bind。 */
+/**
+ * ticketing BC の DI バインディング。
+ *
+ * <p>TK-01 で {@link TicketRepository} を bind。TK-02 で ListMyTickets / GetTicketDetail UseCase の bind
+ * が追加される。
+ */
 public final class TicketingModule implements Module {
 
   @Override
   public void bind(Container container) {
-    // TODO(TK-01): JdbcTicketRepository を bind
+    container.registerSingleton(
+        TicketRepository.class, c -> new JdbcTicketRepository(c.resolve(UnitOfWork.class)));
     // TODO(TK-02): ListMyTicketsUseCase / GetTicketDetailUseCase
-    // TODO(TK-04): MarkUsedUseCase  (Sprint 2)
+    // TODO(TK-04): MarkUsedUseCase (Sprint 2)
   }
 }
