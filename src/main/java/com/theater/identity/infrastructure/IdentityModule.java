@@ -9,8 +9,9 @@ import com.theater.shared.tx.UnitOfWork;
 /**
  * identity BC の DI バインディング。
  *
- * <p>ID-01 で {@link UserRepository} と {@link PasswordHasher} を bind。 ID-02 / ID-03 で UseCase +
- * {@code CurrentUserHolder} の bind が追加される。
+ * <p>ID-01 で {@link UserRepository} と {@link PasswordHasher} を bind。 ID-03 で {@code
+ * CurrentUserHolder} が追加される。UseCase の bind は ArchUnit 制約 (Infrastructure → Application を 禁ずる)
+ * を満たすため Bootstrap 層 ({@code App.bootstrap}) で行う。
  */
 public final class IdentityModule implements Module {
 
@@ -19,7 +20,6 @@ public final class IdentityModule implements Module {
     container.registerSingleton(
         UserRepository.class, c -> new JdbcUserRepository(c.resolve(UnitOfWork.class)));
     container.registerSingleton(PasswordHasher.class, c -> new BcryptPasswordHasher());
-    // TODO(ID-02): RegisterUserUseCase
-    // TODO(ID-03): LoginUseCase / CurrentUserHolder
+    // TODO(ID-03): CurrentUserHolder
   }
 }
