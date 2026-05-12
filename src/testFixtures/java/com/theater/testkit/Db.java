@@ -66,6 +66,10 @@ public final class Db {
     config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
     if (readOnly) {
       config.setReadOnly(true);
+    } else {
+      // WAL モードで DEFERRED→WRITER 昇格時に発生する SQLITE_BUSY_SNAPSHOT を防ぐため、
+      // 書込用 DS は BEGIN IMMEDIATE でライトロックをトランザクション開始時に取得する。
+      config.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
     }
     SQLiteDataSource ds = new SQLiteDataSource(config);
     ds.setUrl(url);

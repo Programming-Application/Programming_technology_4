@@ -3,6 +3,7 @@ package com.theater.reservation.ui;
 import com.theater.identity.domain.CurrentUserHolder;
 import com.theater.reservation.application.HoldSeatsUseCase;
 import com.theater.reservation.application.LoadSeatMapUseCase;
+import com.theater.reservation.application.SeatMapEntry;
 import com.theater.reservation.domain.SeatStateStatus;
 import com.theater.shared.di.Container;
 import com.theater.shared.error.ConflictException;
@@ -100,20 +101,20 @@ public final class SeatSelectController {
   private void refresh() {
     selectedSeats.clear();
     seatGrid.getChildren().clear();
-    var result =
+    var seats =
         loadSeatMap.execute(new LoadSeatMapUseCase.Command(currentSelection.currentScreening()));
     int index = 0;
-    for (LoadSeatMapUseCase.SeatView seat : result.seats()) {
-      Button button = new Button(seat.seatId());
+    for (SeatMapEntry seat : seats) {
+      Button button = new Button(seat.seatId().value());
       button.setMinSize(58, 38);
       button.setMaxSize(58, 38);
       button.setStyle(styleFor(seat.status()));
       button.setDisable(seat.status() != SeatStateStatus.AVAILABLE);
       if (seat.status() == SeatStateStatus.AVAILABLE) {
-        SeatId seatId = new SeatId(seat.seatId());
+        SeatId seatId = seat.seatId();
         button.setOnAction(event -> toggleSeat(seatId, button));
       }
-      SeatPosition position = SeatPosition.parse(seat.seatId(), index);
+      SeatPosition position = SeatPosition.parse(seat.seatId().value(), index);
       seatGrid.add(button, position.column(), position.row());
       index++;
     }

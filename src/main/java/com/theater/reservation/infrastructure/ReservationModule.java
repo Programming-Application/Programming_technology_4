@@ -20,6 +20,7 @@ public final class ReservationModule implements Module {
     container.registerSingleton(
         ScreeningCounterRepository.class,
         c -> new JdbcScreeningCounterRepository(c.resolve(UnitOfWork.class)));
+    // UseCase は Bootstrap (App.java) で登録する (ArchUnit: infrastructure → application 参照禁止)
     // TODO(RV-04): ExpireHoldsJob
   }
 }

@@ -37,4 +37,10 @@ public record Reservation(
     return new Reservation(
         id, userId, screeningId, ReservationStatus.CANCELED, null, createdAt, now, version + 1);
   }
+
+  public Reservation toExpired(Instant now) {
+    Objects.requireNonNull(now, "now");
+    return new Reservation(
+        id, userId, screeningId, ReservationStatus.EXPIRED, null, createdAt, now, version + 1);
+  }
 }

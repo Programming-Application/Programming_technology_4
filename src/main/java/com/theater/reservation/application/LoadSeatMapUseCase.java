@@ -1,8 +1,8 @@
 package com.theater.reservation.application;
 
 import com.theater.reservation.domain.SeatStateRepository;
-import com.theater.reservation.domain.SeatStateStatus;
 import com.theater.shared.kernel.ScreeningId;
+import com.theater.shared.kernel.SeatId;
 import com.theater.shared.tx.TransactionalUseCase;
 import com.theater.shared.tx.Tx;
 import com.theater.shared.tx.UnitOfWork;
@@ -10,9 +10,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-/** 指定上映の座席状態を画面表示用に取得する。 */
+/** RV-01 上映会の座席状態一覧を返す Query UseCase。 */
 public final class LoadSeatMapUseCase
-    extends TransactionalUseCase<LoadSeatMapUseCase.Command, LoadSeatMapUseCase.Result> {
+    extends TransactionalUseCase<LoadSeatMapUseCase.Command, List<SeatMapEntry>> {
 
   private final SeatStateRepository seatStateRepo;
 
@@ -27,37 +27,22 @@ public final class LoadSeatMapUseCase
     }
   }
 
-  public record Result(List<SeatView> seats) {
-    public Result {
-      seats = List.copyOf(seats);
-    }
-  }
-
-  public record SeatView(String seatId, SeatStateStatus status, int price) {
-    public SeatView {
-      Objects.requireNonNull(seatId, "seatId");
-      Objects.requireNonNull(status, "status");
-    }
-  }
-
   @Override
   protected Tx txMode() {
     return Tx.READ_ONLY;
   }
 
   @Override
-  protected Result handle(Command cmd) {
-    List<SeatView> seats =
-        seatStateRepo.findByScreening(cmd.screeningId()).stream()
-            .map(s -> new SeatView(s.seatId().value(), s.status(), s.price()))
-            .sorted(Comparator.comparing(SeatView::seatId, LoadSeatMapUseCase::compareSeatId))
-            .toList();
-    return new Result(seats);
+  protected List<SeatMapEntry> handle(Command cmd) {
+    return seatStateRepo.findByScreening(cmd.screeningId()).stream()
+        .map(s -> new SeatMapEntry(s.seatId(), s.status(), s.price()))
+        .sorted(Comparator.comparing(SeatMapEntry::seatId, LoadSeatMapUseCase::compareSeatId))
+        .toList();
   }
 
-  private static int compareSeatId(String left, String right) {
-    SeatPosition l = SeatPosition.parse(left);
-    SeatPosition r = SeatPosition.parse(right);
+  private static int compareSeatId(SeatId left, SeatId right) {
+    SeatPosition l = SeatPosition.parse(left.value());
+    SeatPosition r = SeatPosition.parse(right.value());
     int row = l.row().compareTo(r.row());
     if (row != 0) {
       return row;
