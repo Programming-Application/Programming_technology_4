@@ -43,4 +43,10 @@ public record Reservation(
     return new Reservation(
         id, userId, screeningId, ReservationStatus.EXPIRED, null, createdAt, now, version + 1);
   }
+
+  public Reservation toConfirmed(Instant now) {
+    Objects.requireNonNull(now, "now");
+    return new Reservation(
+        id, userId, screeningId, ReservationStatus.CONFIRMED, null, createdAt, now, version + 1);
+  }
 }
