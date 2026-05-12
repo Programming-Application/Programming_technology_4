@@ -105,7 +105,7 @@ public final class App extends Application {
 
   @Override
   public void start(Stage stage) throws Exception {
-    Parent root = FXMLLoader.load(App.class.getResource("/ui/fxml/login.fxml"));
+    Parent root = FXMLLoader.load(App.class.getResource("/ui/fxml/home.fxml"));
     stage.setTitle("Theater");
     stage.setScene(new Scene(root));
     stage.show();

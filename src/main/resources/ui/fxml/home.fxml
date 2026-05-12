@@ -11,6 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 <!-- Owner: Person B. CT-01/04/05. -->
 <BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.theater.catalog.ui.HomeController"
             prefWidth="960" prefHeight="640">
   <top>
     <HBox spacing="8" BorderPane.alignment="CENTER_LEFT">
@@ -18,8 +19,8 @@
         <Insets top="12" right="12" bottom="8" left="12"/>
       </padding>
       <TextField fx:id="movieSearchField" promptText="映画タイトルで検索" HBox.hgrow="ALWAYS"/>
-      <Button fx:id="searchButton" text="検索"/>
-      <Button fx:id="refreshButton" text="更新"/>
+      <Button fx:id="searchButton" text="検索" onAction="#onSearchClicked"/>
+      <Button fx:id="refreshButton" text="更新" onAction="#onRefreshClicked"/>
     </HBox>
   </top>
   <center>
@@ -44,7 +45,8 @@
         </padding>
         <Label text="詳細"/>
         <TextArea fx:id="detailTextArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS"/>
-        <Button fx:id="selectSeatButton" text="座席を選ぶ" maxWidth="Infinity"/>
+        <Button fx:id="selectSeatButton" text="座席を選ぶ" maxWidth="Infinity"
+                onAction="#onSelectSeatClicked"/>
       </VBox>
     </SplitPane>
   </center>
