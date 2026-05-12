@@ -9,6 +9,10 @@ import com.theater.identity.domain.PasswordHasher;
 import com.theater.identity.domain.UserRepository;
 import com.theater.identity.infrastructure.IdentityModule;
 import com.theater.ordering.infrastructure.OrderingModule;
+import com.theater.reservation.application.ExpireHoldsJob;
+import com.theater.reservation.domain.ReservationRepository;
+import com.theater.reservation.domain.ScreeningCounterRepository;
+import com.theater.reservation.domain.SeatStateRepository;
 import com.theater.reservation.infrastructure.ReservationModule;
 import com.theater.shared.SharedModule;
 import com.theater.shared.bootstrap.DemoDataLoader;
@@ -21,6 +25,11 @@ import com.theater.ticketing.infrastructure.TicketingModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -43,6 +52,8 @@ public final class App extends Application {
 
   private static final Logger LOG = LoggerFactory.getLogger(App.class);
   private static final String DB_PATH = "data/theater.db";
+  private static ScheduledExecutorService expireHoldsScheduler;
+  private static ScheduledFuture<?> expireHoldsTask;
 
   public static void main(String[] args) {
     bootstrap();
@@ -86,6 +97,7 @@ public final class App extends Application {
 
     Container.setGlobal(container);
     container.resolve(DemoDataLoader.class).loadIfEmpty();
+    startExpireHoldsScheduler(container);
     LOG.info("Application bootstrapped. db={}", dbFile.toAbsolutePath());
   }
 
@@ -116,6 +128,38 @@ public final class App extends Application {
                 c.resolve(CurrentUserHolder.class)));
     container.registerSingleton(
         LogoutUseCase.class, c -> new LogoutUseCase(c.resolve(CurrentUserHolder.class)));
+    container.registerSingleton(
+        ExpireHoldsJob.class,
+        c ->
+            new ExpireHoldsJob(
+                c.resolve(UnitOfWork.class),
+                c.resolve(ReservationRepository.class),
+                c.resolve(SeatStateRepository.class),
+                c.resolve(ScreeningCounterRepository.class),
+                c.resolve(Clock.class)));
+  }
+
+  private static void startExpireHoldsScheduler(Container container) {
+    if (expireHoldsScheduler != null && !expireHoldsScheduler.isShutdown()) {
+      return;
+    }
+    long intervalMs = reservationExpireHoldsIntervalMs();
+    expireHoldsScheduler = Executors.newSingleThreadScheduledExecutor();
+    expireHoldsTask =
+        expireHoldsScheduler.scheduleAtFixedRate(
+            container.resolve(ExpireHoldsJob.class), intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+  }
+
+  private static long reservationExpireHoldsIntervalMs() {
+    Properties properties = new Properties();
+    try (var in = App.class.getResourceAsStream("/application.properties")) {
+      if (in != null) {
+        properties.load(in);
+      }
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("Failed to load application.properties", e);
+    }
+    return Long.parseLong(properties.getProperty("reservation.expireHolds.intervalMs", "1000"));
   }
 
   private static SQLiteDataSource buildSqliteDataSource(String url, boolean readOnly) {
@@ -150,5 +194,15 @@ public final class App extends Application {
     stage.setTitle("Theater");
     stage.setScene(new Scene(root));
     stage.show();
+  }
+
+  @Override
+  public void stop() {
+    if (expireHoldsTask != null) {
+      expireHoldsTask.cancel(true);
+    }
+    if (expireHoldsScheduler != null) {
+      expireHoldsScheduler.shutdownNow();
+    }
   }
 }
