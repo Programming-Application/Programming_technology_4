@@ -59,7 +59,8 @@ class JdbcSeatStateRepositoryIT {
     seedHeldSeat("sc-1", "A-2", reservationId);
 
     uow.executeVoid(
-        Tx.REQUIRED, () -> repository.releaseByReservation(new ReservationId(reservationId)));
+        Tx.REQUIRED,
+        () -> repository.releaseByReservation(new ReservationId(reservationId), Instant.now()));
 
     var states =
         uow.execute(Tx.READ_ONLY, () -> repository.findByScreening(new ScreeningId("sc-1")));

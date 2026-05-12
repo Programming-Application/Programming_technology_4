@@ -82,6 +82,8 @@ class JdbcReservationRepositoryIT {
     Reservation loaded =
         uow.execute(Tx.READ_ONLY, () -> repository.findById(new ReservationId("r-4")))
             .orElseThrow();
+    // ★ B の Repository 規約: 呼出側が version + 1 を載せて save する
+    // (Reservation.toCanceled() と同じ流儀)
     Reservation updated =
         new Reservation(
             loaded.id(),
@@ -91,7 +93,7 @@ class JdbcReservationRepositoryIT {
             null,
             loaded.createdAt(),
             NOW,
-            loaded.version());
+            loaded.version() + 1);
     uow.executeVoid(Tx.REQUIRED, () -> repository.save(updated));
 
     Reservation reloaded =
@@ -106,12 +108,24 @@ class JdbcReservationRepositoryIT {
     Reservation reservation = holdReservation("r-5", "u-1", "sc-1");
     uow.executeVoid(Tx.REQUIRED, () -> repository.save(reservation));
 
-    Reservation stale =
+    Reservation loaded =
         uow.execute(Tx.READ_ONLY, () -> repository.findById(new ReservationId("r-5")))
             .orElseThrow();
-    uow.executeVoid(Tx.REQUIRED, () -> repository.save(stale));
+    // 1 回目: version+1 を載せて update → DB version 0 → 1 で成功
+    Reservation firstSave =
+        new Reservation(
+            loaded.id(),
+            loaded.userId(),
+            loaded.screeningId(),
+            ReservationStatus.CONFIRMED,
+            null,
+            loaded.createdAt(),
+            NOW,
+            loaded.version() + 1);
+    uow.executeVoid(Tx.REQUIRED, () -> repository.save(firstSave));
 
-    assertThatThrownBy(() -> uow.executeVoid(Tx.REQUIRED, () -> repository.save(stale)))
+    // 2 回目: 同じ "stale" (= 古いまま再利用) を save → DB は既に version=1 なので失敗
+    assertThatThrownBy(() -> uow.executeVoid(Tx.REQUIRED, () -> repository.save(firstSave)))
         .isInstanceOf(OptimisticLockException.class);
   }
 
