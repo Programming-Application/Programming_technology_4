@@ -30,6 +30,8 @@ import com.theater.shared.kernel.Clock;
 import com.theater.shared.kernel.IdGenerator;
 import com.theater.shared.tx.JdbcUnitOfWork;
 import com.theater.shared.tx.UnitOfWork;
+import com.theater.ticketing.application.GetTicketDetailUseCase;
+import com.theater.ticketing.application.ListMyTicketsUseCase;
 import com.theater.ticketing.domain.TicketRepository;
 import com.theater.ticketing.infrastructure.TicketingModule;
 import java.nio.file.Files;
@@ -188,6 +190,20 @@ public final class App extends Application {
                     c.resolve(PaymentGateway.class), c.resolve(DomainEventBus.class)),
                 c.resolve(Clock.class),
                 c.resolve(IdGenerator.class)));
+    container.registerSingleton(
+        ListMyTicketsUseCase.class,
+        c ->
+            new ListMyTicketsUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(TicketRepository.class),
+                c.resolve(CatalogQueryRepository.class)));
+    container.registerSingleton(
+        GetTicketDetailUseCase.class,
+        c ->
+            new GetTicketDetailUseCase(
+                c.resolve(UnitOfWork.class),
+                c.resolve(TicketRepository.class),
+                c.resolve(CatalogQueryRepository.class)));
   }
 
   private static void startExpireHoldsScheduler(Container container) {
