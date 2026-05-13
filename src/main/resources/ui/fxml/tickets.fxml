@@ -1,8 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<!-- Owner: Person A. TK-01/02. -->
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      spacing="8" prefWidth="800" prefHeight="600">
-  <Label text="My Tickets (TODO)"/>
-</VBox>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<!-- Owner: Person A. TK-02 ListMyTickets / TK-03 UI. -->
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.theater.ticketing.ui.TicketsController"
+            prefWidth="900" prefHeight="600">
+  <top>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+      <padding>
+        <Insets top="12" right="12" bottom="8" left="12"/>
+      </padding>
+      <Button fx:id="backButton" text="戻る" onAction="#onBackClicked"/>
+      <Label text="マイチケット" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+      <Pane HBox.hgrow="ALWAYS"/>
+      <Label text="表示:"/>
+      <ComboBox fx:id="filterCombo" prefWidth="160"/>
+      <Button text="更新" onAction="#onRefreshClicked"/>
+    </HBox>
+  </top>
+  <center>
+    <SplitPane dividerPositions="0.4">
+      <VBox spacing="8">
+        <padding>
+          <Insets top="8" right="8" bottom="12" left="12"/>
+        </padding>
+        <Label text="チケット一覧"/>
+        <ListView fx:id="ticketListView" VBox.vgrow="ALWAYS"/>
+      </VBox>
+      <VBox spacing="8">
+        <padding>
+          <Insets top="8" right="12" bottom="12" left="8"/>
+        </padding>
+        <Label text="詳細"/>
+        <TextArea fx:id="detailTextArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS"/>
+      </VBox>
+    </SplitPane>
+  </center>
+</BorderPane>
