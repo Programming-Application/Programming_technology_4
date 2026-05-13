@@ -123,6 +123,31 @@ final class JdbcTicketRepository implements TicketRepository {
   }
 
   @Override
+  public int cancelByOrderId(OrderId orderId, Instant canceledAt) {
+    Objects.requireNonNull(orderId, "orderId");
+    Objects.requireNonNull(canceledAt, "canceledAt");
+    try (PreparedStatement ps =
+        connection()
+            .prepareStatement(
+                """
+                UPDATE tickets
+                   SET status = 'CANCELED',
+                       canceled_at = ?,
+                       updated_at = ?,
+                       version = version + 1
+                 WHERE order_id = ?
+                   AND status = 'ACTIVE'
+                """)) {
+      ps.setLong(1, canceledAt.toEpochMilli());
+      ps.setLong(2, canceledAt.toEpochMilli());
+      ps.setString(3, orderId.value());
+      return ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to cancel tickets by order: " + orderId.value(), e);
+    }
+  }
+
+  @Override
   public void markUsed(TicketId id, Instant usedAt) {
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(usedAt, "usedAt");

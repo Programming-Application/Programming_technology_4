@@ -23,6 +23,9 @@ public interface SeatStateRepository {
 
   int releaseByReservation(ReservationId reservationId, Instant now);
 
+  /** OR-05 CancelOrder 用。SOLD 座席を AVAILABLE に戻す。返却値は解放した座席数。 */
+  int releaseSoldByReservation(ReservationId reservationId, Instant now);
+
   void markSold(ReservationId reservationId, Map<SeatId, TicketId> seatToTicket, Instant now);
 
   void markExpired(List<ReservationId> reservationIds, Instant now);

@@ -180,5 +180,10 @@ final class StartCheckoutUseCaseTest {
     public void markExpired(List<ReservationId> reservationIds, Instant now) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int releaseSoldByReservation(ReservationId reservationId, Instant now) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

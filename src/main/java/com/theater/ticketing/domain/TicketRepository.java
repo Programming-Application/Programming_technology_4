@@ -1,5 +1,6 @@
 package com.theater.ticketing.domain;
 
+import com.theater.shared.kernel.OrderId;
 import com.theater.shared.kernel.TicketId;
 import com.theater.shared.kernel.UserId;
 import java.time.Instant;
@@ -24,4 +25,7 @@ public interface TicketRepository {
 
   /** TK-04 MarkUsed で使用 (Sprint 2)。冪等性は呼出側で保証。 */
   void markUsed(TicketId id, Instant usedAt);
+
+  /** OR-05 CancelOrder 用。orderId に紐づく ACTIVE チケットを CANCELED に遷移。返却値は変更枚数。 */
+  int cancelByOrderId(OrderId orderId, Instant canceledAt);
 }

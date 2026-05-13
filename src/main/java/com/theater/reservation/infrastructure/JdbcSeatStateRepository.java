@@ -68,6 +68,30 @@ final class JdbcSeatStateRepository implements SeatStateRepository {
   }
 
   @Override
+  public int releaseSoldByReservation(ReservationId reservationId, Instant now) {
+    try (PreparedStatement ps =
+        connection()
+            .prepareStatement(
+                """
+                UPDATE seat_states
+                   SET status = 'AVAILABLE',
+                       reservation_id = NULL,
+                       hold_expires_at = NULL,
+                       ticket_id = NULL,
+                       version = version + 1,
+                       updated_at = ?
+                 WHERE reservation_id = ?
+                   AND status = 'SOLD'
+                """)) {
+      ps.setLong(1, toMillis(now));
+      ps.setString(2, reservationId.value());
+      return ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to release sold seats: " + reservationId.value(), e);
+    }
+  }
+
+  @Override
   public int releaseByReservation(ReservationId reservationId, Instant now) {
     try (PreparedStatement ps =
         connection()
