@@ -285,6 +285,11 @@ class ListMyTicketsUseCaseTest {
     public void markUsed(TicketId id, Instant usedAt) {
       throw new UnsupportedOperationException("not used in this test");
     }
+
+    @Override
+    public int cancelByOrderId(OrderId orderId, Instant canceledAt) {
+      throw new UnsupportedOperationException("not used in this test");
+    }
   }
 
   /**
