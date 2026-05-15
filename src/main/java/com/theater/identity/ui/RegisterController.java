@@ -39,10 +39,23 @@ public final class RegisterController {
   private void onRegisterClicked() {
     errorLabel.setText("");
     successLabel.setText("");
+    String name = nameField.getText();
+    String email = emailField.getText();
+    String password = passwordField.getText();
+    if (name.isBlank()) {
+      errorLabel.setText("氏名を入力してください");
+      return;
+    }
+    if (email.isBlank()) {
+      errorLabel.setText("メールアドレスを入力してください");
+      return;
+    }
+    if (password.length() < 8) {
+      errorLabel.setText("パスワードは 8 文字以上で入力してください");
+      return;
+    }
     try {
-      registerUseCase.execute(
-          new RegisterUserUseCase.Command(
-              emailField.getText(), nameField.getText(), passwordField.getText()));
+      registerUseCase.execute(new RegisterUserUseCase.Command(email, name, password));
       successLabel.setText("登録が完了しました。ログインしてください。");
       nameField.clear();
       emailField.clear();
@@ -50,7 +63,7 @@ public final class RegisterController {
     } catch (ConflictException e) {
       errorLabel.setText("このメールアドレスは既に登録されています");
     } catch (IllegalArgumentException e) {
-      errorLabel.setText("入力内容を確認してください (パスワードは 8 文字以上)");
+      errorLabel.setText("メールアドレスの形式を確認してください");
     } catch (RuntimeException e) {
       errorLabel.setText("登録に失敗しました");
     }
