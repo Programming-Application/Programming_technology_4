@@ -234,28 +234,76 @@ public record ConfirmedReservationView(
 | 3 | Sprint 1 (B 先行) | catalog: `V010__catalog` / domain (Movie/Screen/Seat/Screening + status/type enum) / `CatalogQueryRepository` + `ScreeningRepository` / CT-01〜05 Query UseCase + DTO / `JdbcCatalogRepository` / `home.fxml` 骨格 | B | 2026-05-03 | (B merge) |
 | 4 | docs | `is_published` × `screenings.status` 不変条件の明文化 (UnpublishMovie はスコープ外) | A | 2026-05-04 | #4 |
 | 5 | Sprint 0 phase 2 (Q1) | cross-BC ID 4 個 (`MovieId`/`ScreenId`/`ScreeningId`/`SeatId`) を `shared/kernel` へ移動 + `Identifier` interface 新設 | A | 2026-05-04 | #5 |
+| 6 | docs | task_split.md に進捗ログ + issue 駆動 roadmap + ファイルレベル衝突回避設計 (§8〜§11) を追加 | A | 2026-05-04 | #6 |
+| 7 | Sprint 0 finalization (PLAT-01..03) | shared/eventbus + 6 BC Modules + Seeds 5 BC 分割 + App.bootstrap install 6 行 + identity/ticketing 契約 (entity + Repository interface) + UserId/TicketId/OrderId / `LayerArchTest` に Bootstrap layer 追加 | A | 2026-05-06 | #16 (closes #7 #8 #9) |
+| 8 | PLAT-04 | reservation/ordering の domain 完成: `Reservation`/`SeatState`/`ReservationStatus`/`SeatStateStatus` + `Order`/`Payment`/`Refund`/`OrderStatus`/`PaymentStatus`/`PaymentId` (内部) + 5 Repository interface + `ReservationId` (`shared/kernel`) + 4 unit テスト | B | 2026-05-09 | #18 (closes #10) |
+| 9 | RV-01 (8割) + RV-03 | reservation 実装: `V020__reservation.sql` (reservations + seat_states + CHECK 多段 + Index 4) / `JdbcReservationRepository` / `JdbcSeatStateRepository` / `JdbcScreeningCounterRepository` + `ScreeningCounterRepository` interface / `ReservationModule` で 3 つ bind / `ReleaseHoldUseCase` + Authorization/Atomicity テスト | B | 2026-05-11 | #19 (closes #15、#13 は 8割完了 — Seeds と Repository IT が未) |
+| 10 | PLAT-05 | cross-BC DTO `ConfirmedReservationView` (Money 型 + SeatPriceLine 内部 record) + DTO 配置規約 (`application/dto/*` = cross-BC / `application/*View` = 内部) を `docs/architecture.md §3` に明記 | A | 2026-05-12 | #25 (closes #20) |
+| 11 | ID-01 | identity infra: `JdbcUserRepository` + `BcryptPasswordHasher` + `PasswordHasher` interface / `IdentityModule` bind / `IdentitySeeds.user(...)` / `JdbcUserRepositoryIT` (CHECK / UNIQUE / FK / 楽観ロック) + Bcrypt round-trip テスト / `bcrypt` 依存追加 | A | 2026-05-12 | #26 (closes #21) |
+| 12 | TK-01 | ticketing: V040 `tickets` テーブル + `uq_tickets_active_seat` partial UNIQUE (★ ダブルブッキング最終防壁) + `JdbcTicketRepository` (findById / findByUser / insert / markUsed 冪等) / `TicketingModule` bind / Repository IT 11 ケース (双方向 ACTIVE 衝突 + USED 後の再 ACTIVE 可) | A | 2026-05-12 | #27 (closes #22) |
+| 13 | RV-01b | reservation 残作業: `ReservationSeeds` ヘルパ (`holdReservation` / `seedSeatStatesAvailable` / `seedSeatStatesHold`) + `JdbcReservationRepositoryIT` (7 ケース) + `JdbcSeatStateRepositoryIT` (5 ケース) + `SeatStateTest` 3 ケース拡張 | C → 実装、A が rebase 援助 | 2026-05-12 | #23 (closes #24, #13 を完全 close) |
+| 14 | CT-07 | `shared/bootstrap/DemoDataLoader` + DI (`SharedModule` で bind / `App.bootstrap` で `loadIfEmpty()` 起動) — admin Cmd UC の代替として users / movies / screens / seats / screenings / seat_states を空 DB に初期投入。`DemoDataLoaderTest` 付き | B | 2026-05-12 | #48 (closes #28) |
+| 15 | CT-06 + CT-09 + RV-05 (skeleton) | `HomeController` (CT-06 = 一覧/検索/詳細 + 「座席を選ぶ」遷移) + `SeatSelectController` 骨格 (RV-05 残: 座席グリッド描画) + `shared/session/CurrentSelection` 追加 (`UserId` + `ScreeningId` を controller 間で共有) + home.fxml / seat_select.fxml に fx:controller 注入 | B | 2026-05-12 | #49 (closes #29) |
+| 16 | ID-02 | identity application: `RegisterUserUseCase` (Tx Cmd / `Email` 正規化 / `bcrypt` ハッシュ / `ConflictException` 多層防御) + `App.bootstrap` で UC bind + Unit (`*Test`) + Repository IT (`*IT`) + Atomicity Tx (`*AtomicityTxTest`) 3 種 | A | 2026-05-12 | #50 (closes #31) |
+| 17 | CT-08 | catalog Cmd: `PublishMovieUseCase` + `MovieRepository.save` (interface 追加) + `JdbcCatalogRepository.save` 実装 + `CatalogModule` bind + Unit + Atomicity Tx + Repository IT | B | 2026-05-12 | #51 (closes #30) |
+| 18 | ID-03 | identity application: `LoginUseCase` (Tx.READ_ONLY) + `LogoutUseCase` (Tx 非継承) + `CurrentUserHolder` (Singleton, identity/domain) + `AuthenticationException` (shared/error, bad email/bad password 共通) + `IdentityModule` で Holder bind + `App.bootstrap` で UC 2 つ bind + Unit 12 ケース | A | 2026-05-12 | #52 (closes #32) |
+| 19 | ID-04 | identity UI: `LoginController` + `RegisterController` (FXMLLoader が new するため DI bind 不要、`Container.global().resolve` で UC 取得) + `shared/ui/Screens` 共通ヘルパ (FXMLLoader + Stage.setScene) + login.fxml / register.fxml を実 UI 化 + `App.start` のエントリを home.fxml → login.fxml に切替 + `LoginController` が `CurrentSelection.setCurrentUser` も呼んで HomeController の DEMO_USER fallback を実ユーザに置換 | A | 2026-05-12 | #53 (closes #33) |
 
-### 達成済の集約マップ
+### 達成済の集約マップ (PR #48 / #49 / #50 / #51 / #52 / #53 merge 後)
 
 ```
 shared/
-├── kernel/    ✅ Money, Currency, Result, Clock, IdGenerator, Identifier, MovieId, ScreenId, ScreeningId, SeatId
-├── error/     ✅ DomainException 階層 (5 具象)
+├── kernel/    ✅ Money, Currency, Result, Clock, IdGenerator, Identifier,
+│              ✅ MovieId, ScreenId, ScreeningId, SeatId, UserId, TicketId, OrderId, ReservationId
+├── error/     ✅ DomainException 階層 (6 具象: Conflict/NotFound/OptimisticLock/IllegalStateTransition/MismatchedCurrency/Authentication)
 ├── di/        ✅ Container, Module(I/F), Provider, Scope
 ├── tx/        ✅ UnitOfWork(I/F), JdbcUnitOfWork (writable+readOnly), TransactionalUseCase, Tx
-└── eventbus/  ❌ 未着手 (PLAT-01)
+├── eventbus/  ✅ DomainEvent, DomainEventBus, OutboxDomainEventBus (Tx統合テスト済)
+├── session/   ✅ CurrentSelection (UserId + ScreeningId を controller 間で共有 / PR #49)
+├── bootstrap/ ✅ DemoDataLoader (users / movies / screens / seats / screenings / seat_states 初期投入 / PR #48)
+├── ui/        ✅ Screens (FXMLLoader + Stage.setScene 共通ヘルパ / PR #53)
+└── SharedModule  ✅ Clock / IdGenerator / DomainEventBus / CurrentSelection / DemoDataLoader を bind
+
+identity/
+├── domain/         ✅ entity (User/Email/PasswordHash/UserRole) + UserRepository interface + PasswordHasher interface + CurrentUserHolder (Singleton セッション)
+├── application/    ✅ RegisterUserUseCase (ID-02 / PR #50) + LoginUseCase Tx.READ_ONLY (ID-03 / PR #52) + LogoutUseCase (ID-03 / PR #52)
+├── infrastructure/ ✅ JdbcUserRepository + BcryptPasswordHasher + IdentityModule (3 bind: UserRepository / PasswordHasher / CurrentUserHolder)
+└── ui/             ✅ LoginController + RegisterController + login.fxml / register.fxml 実 UI 化 (ID-04 / PR #53)。App.start は login.fxml から開始
 
 catalog/
-├── domain/         ✅ 集約 + 2 Repository interface
-├── application/    ✅ CT-01〜05 Query UC + 内部 view DTO
-├── infrastructure/ ✅ JdbcCatalogRepository (Query + Screening write)
-└── ui/             ❌ home.fxml は骨格のみ、Controller 未実装 (CT-06)
+├── domain/         ✅ 集約 + 2 Repository interface (Catalog**Query** + Screening) + MovieRepository write 用 interface (CT-08 / PR #51)
+├── application/    ✅ CT-01〜05 Query UC + 内部 view DTO + PublishMovieUseCase (CT-08 / PR #51)
+├── infrastructure/ ✅ JdbcCatalogRepository (Query + Screening + Movie 書込) + CatalogModule (3 interface に bind)
+└── ui/             🟡 HomeController 実装済 (CT-06 / PR #49: 一覧/検索/詳細/座席選択遷移)。#12 CT-06 issue は OPEN のまま (UI 動作確認は CT-07 DemoData merge で解錠済)。home → seat_select 遷移は CT-09 / PR #49 で実装
 
-identity/    ❌ 未着手   reservation/ ❌ 未着手
-ordering/    ❌ 未着手   ticketing/   ❌ 未着手
+reservation/
+├── domain/         ✅ Reservation/SeatState record + ReservationStatus/SeatStateStatus enum + 3 Repository interface (Reservation/SeatState/ScreeningCounter)
+├── application/    🟡 ReleaseHoldUseCase 完了 (RV-03)。LoadSeatMap / HoldSeats (#14 RV-02) / ExpireHoldsJob (#36 RV-04) 未
+├── application/dto/ ✅ ConfirmedReservationView (PLAT-05 で OR-04 用 cross-BC 契約)
+├── infrastructure/ ✅ Jdbc{Reservation,SeatState,ScreeningCounter}Repository 実装 + ReservationModule で 3 bind。**`tryHold` も実装済 (1 seat ずつループ)**
+└── ui/             🟡 SeatSelectController 骨格のみ (CT-09 接合用に PR #49 で追加)。座席グリッド描画 + HOLD wire は #37 RV-05 で実装
 
-testkit/  ✅ Db / FixedClock / IncrementingIdGenerator
-          ❌ Seeds は inline 状態 (PLAT-02 で関数化予定)
+(※ RV-01 #13 / #24 RV-01b は PR #23 で完全 close。`ReservationSeeds` ヘルパ + Repository IT (CHECK / UNIQUE / FK / 楽観ロック) 含む。)
+
+ordering/
+├── domain/         ✅ Order/Payment/Refund record + OrderStatus/PaymentStatus enum + PaymentId (内部) + 3 Repository interface + unit テスト 2 件
+├── application/    ❌ 未着手 (#38..#43 OR-01..06: StartCheckout / Checkout / CancelOrder / RefundOrder ほか)
+├── infrastructure/ 🟡 OrderingModule skeleton のみ (TODO: #38 OR-01 で Jdbc Repository, #39 OR-02 で MockPaymentGateway を bind)
+└── ui/             ❌ 未着手 (#43 OR-06 CheckoutController, checkout.fxml は骨格のみ)
+
+(※ V030 マイグレーションは placeholder のまま。#38 OR-01 で実 SQL に置換予定。)
+
+ticketing/
+├── domain/         ✅ entity (Ticket/TicketStatus) + TicketRepository interface
+├── application/    ❌ 未着手 (#34 TK-02 ListMyTickets / GetTicketDetail / #46 TK-04 MarkUsed)
+├── infrastructure/ ✅ JdbcTicketRepository + TicketingModule で bind。**`tickets.order_id` FK は OR-01 完了後 V050 で追加予定**
+└── ui/             ❌ 未着手 (#35 TK-03 TicketsController, tickets.fxml は骨格のみ)
+
+testkit/  ✅ Db / FixedClock / IncrementingIdGenerator / Seeds 5 BC 別分割 (IdentitySeeds.user / ReservationSeeds 3 helpers / 他 BC は skeleton)
+App.bootstrap  ✅ 6 install 行 + UseCase 4 個 (RegisterUser/Login/Logout/PublishMovie) bind + DemoDataLoader.loadIfEmpty() 起動 + エントリ login.fxml
+ArchUnit       ✅ Bootstrap layer 追加 (App.java のみが infrastructure へのアクセス権)
+
+Migration:    V001 ✅ / V010 ✅ / V020 ✅ / V030 ❌ (placeholder, OR-01 で実装) / V040 ✅ (tickets, orders FK 抜き)
 ```
 
 ---
@@ -270,70 +318,75 @@ testkit/  ✅ Db / FixedClock / IncrementingIdGenerator
 
 ### 9.1 Sprint 0 finalization (= Q2-Q4 まとめ・直近最優先)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **PLAT-01** | `shared/eventbus` 実装 (DomainEvent / DomainEventBus / OutboxDomainEventBus) + Tx 統合テスト | A | `domain_events_outbox` への INSERT が Tx に乗ること、commit/rollback が伝搬すること | (Q1 完了済) | OR-04 |
-| **PLAT-02** | 6 つの `*Module.java` 雛形 + `App.bootstrap` の `install` 有効化 + `testkit/Seeds*.java` を BC 別に分割 | A | **Module 側**: SharedModule (DomainEventBus/UnitOfWork bind) / CatalogModule (B の既存リポジトリ bind) / 他 4 BC は空 bind() / `App.bootstrap` で 6 行の `install(...)` を**ここで全て書き切る** (以後 BC issue 側では Module ファイルだけ編集すれば足りるようにする). **Seeds 側**: `testkit/Seeds.java` は aggregator のみ、実体は `IdentitySeeds.java` / `CatalogSeeds.java` / `ReservationSeeds.java` / `OrderingSeeds.java` / `TicketingSeeds.java` の 5 BC 別ファイルに分割。各 BC issue は自 BC の Seeds ファイルだけ編集する設計 (詳細は §11) | (Q1 完了済) | ID-01, CT-06, RV-01, OR-01, TK-01 |
-| **PLAT-03** | identity / ticketing の Repository interface 雛形 + `UserId` / `TicketId` を `shared/kernel` 追加 | A | `identity/domain/UserRepository` + `ticketing/domain/TicketRepository` の interface 定義のみ。実装は ID-01 / TK-01 で | (Q1 完了済) | ID-01, TK-01 |
-| **PLAT-04** | reservation / ordering の Repository interface draft + `ReservationId` / `OrderId` を `shared/kernel` 追加 | A (draft) → C (合意) | `ReservationRepository` / `SeatStateRepository` / `OrderRepository` / `PaymentRepository` / `RefundRepository` の interface 雛形 | (Q1 完了済) | RV-01, OR-01 |
-| **PLAT-05** | cross-BC DTO 雛形 (`application/dto/*`) | A | `reservation/application/dto/ConfirmedReservationView` (OR-04 が消費) など最小セット | PLAT-04 | OR-04 |
+| # | タイトル | Owner | スコープ | 状態 |
+|---|---|---|---|---|
+| ~~PLAT-01~~ | `shared/eventbus` (PR #16) | A | DomainEvent / DomainEventBus / OutboxDomainEventBus + Tx 統合テスト | ✅ closed |
+| ~~PLAT-02~~ | 6 `*Module` + Seeds 5 BC 分割 + `App.bootstrap` install (PR #16) | A | — | ✅ closed |
+| ~~PLAT-03~~ | identity / ticketing 契約 + `UserId`/`TicketId`/`OrderId` (PR #16) | A | — | ✅ closed |
+| ~~PLAT-04~~ | reservation / ordering 契約 + `ReservationId` (PR #18) | A (draft) → B 実装 | — | ✅ closed |
+| ~~PLAT-05~~ | cross-BC DTO `ConfirmedReservationView` + DTO 配置規約 (PR #25) | A | — | ✅ closed |
 
 ### 9.2 Sprint 1 (縦串 MVP)
 
-#### identity (A)
+#### identity (A) — **縦串完了** (新規登録 → ログイン → home)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **ID-01** | identity domain (User/Email/PasswordHash) + `JdbcUserRepository` 実装 | A | bcrypt ハッシュ / email UNIQUE / Repository テスト (Repository IT) | PLAT-02, PLAT-03 | ID-02, ID-03 |
-| **ID-02** | RegisterUser UseCase + テスト | A | Tx Cmd / email UNIQUE 違反テスト / Atomicity / Repository / Unit | ID-01 | ID-04 |
-| **ID-03** | Login UseCase + Session (`CurrentUserHolder` Singleton) + テスト | A | password 検証 / 失敗時例外 / Singleton セッション保持 | ID-01 | ID-04, OR-04 |
-| **ID-04** | login.fxml / register.fxml Controller + UseCase wire (UI 動作確認) | A | JavaFX Controller / ViewModel / 入力バリデーション / 画面遷移 | ID-02, ID-03 | (UI 統合) |
+| # | gh issue | タイトル | Owner | Blocked by | Blocks | 状態 |
+|---|---|---|---|---|---|---|
+| ~~ID-01~~ | — | `JdbcUserRepository` + `BcryptPasswordHasher` (PR #26) | A | — | ID-02, ID-03 | ✅ closed |
+| ~~ID-02~~ | — | RegisterUser UseCase + Unit / Repository IT / Atomicity (PR #50) | A | — | ID-04 | ✅ closed |
+| ~~ID-03~~ | — | Login + Logout UseCase + `CurrentUserHolder` + `AuthenticationException` (PR #52) | A | — | ID-04, OR-04, TK-02..03 | ✅ closed |
+| ~~ID-04~~ | — | LoginController + RegisterController + `shared/ui/Screens` + login/register.fxml UI + App.start を login.fxml に切替 (PR #53) | A | — | MVP DoD #1 解錠 | ✅ closed |
 
-#### catalog (B / 残)
+#### catalog (B)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **CT-06** | home.fxml Controller + Catalog UseCase wire (UI 動作確認) | B | 一覧/検索/詳細表示 + 「座席を選ぶ」ボタンから seat_select 画面遷移 (RV-05 完了後) | PLAT-02 | (UI 統合) |
-| **CT-07** (任意) | (admin) PublishMovie Cmd UC | B | 課題スコープでは seed SQL 代替で十分。実装するなら Tx | PLAT-02 | — |
+| # | gh issue | タイトル | Owner | Blocked by | Blocks | 状態 |
+|---|---|---|---|---|---|---|
+| **CT-06** | #12 | home.fxml Controller + Query UseCase wire — **PR #49 で実装済**だが gh issue は OPEN のまま (UI 動作確認チェックが残っている?) | B | — | (UI 統合) | 🟡 実装済 / issue OPEN |
+| ~~CT-07~~ | — | catalog seed data — `shared/bootstrap/DemoDataLoader` で users / movies / screens / seats / screenings / seat_states を空 DB に投入 (PR #48) | B | — | UI 動作確認解錠 | ✅ closed |
+| ~~CT-08~~ | — | PublishMovie Cmd UC + `MovieRepository.save` + `JdbcCatalogRepository.save` + Atomicity Tx / Repository IT (PR #51) | B | — | — | ✅ closed (任意) |
+| ~~CT-09~~ | — | home → seat_select 画面遷移 (`HomeController.onSelectSeatClicked` + `CurrentSelection.selectScreening`) (PR #49) | B | CT-06 ✅, RV-05 (骨格のみ) | (UI 統合) | ✅ closed |
 
 #### reservation (C)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **RV-01** | `V020__reservation` + reservation domain + `JdbcSeatStateRepository` / `JdbcReservationRepository` | C | reservations + seat_states テーブル + 多段 CHECK 制約 + 集約 + Repository IT (CHECK / FK / UNIQUE 検証) | PLAT-02, PLAT-04 | RV-02, RV-03, RV-04, OR-01 |
-| **RV-02** | RV-01 LoadSeatMap (Query) + RV-02 HoldSeats (`BEGIN IMMEDIATE` + 多層防御) + ACID 4 要件テスト + 同時実行テスト | C | `UPDATE seat_states WHERE status='AVAILABLE'` の影響行数判定 / 100 並列での衝突解消 / Atomicity / Consistency / Isolation / Durability 全部 | RV-01 | RV-03, RV-05, OR-04 |
-| **RV-03** | RV-03 ReleaseHold + テスト | C | 自分の予約のみ解放可 / 状態遷移検証 | RV-02 | (UI) |
-| **RV-04** | RV-05 ExpireHolds Job + テスト | C | 期限切れ HOLD を EXPIRED に / seat_states を AVAILABLE に / **冪等** | RV-02 | (運用) |
-| **RV-05** | seat_select.fxml Controller + UseCase wire (UI 動作確認) | C | 座席グリッド描画 + クリックで HOLD | RV-02 | (UI 統合) |
+| # | gh issue | タイトル | Owner | Blocked by | Blocks | 状態 |
+|---|---|---|---|---|---|---|
+| ~~RV-01~~ | — | V020 + reservation/seat_states domain + Repository (PR #18 / #19 / #23) | C draft → B 実装 + A rebase 援助 | — | RV-02..05, OR-01 | ✅ closed |
+| ~~RV-01b~~ | — | `ReservationSeeds` ヘルパ + Repository IT (PR #23) | C → A rebase 援助 | — | RV-02 推奨先行 | ✅ closed |
+| **RV-02** | #14 | LoadSeatMap (Query) + HoldSeats UseCase + ACID 4 要件 + 100 並列テスト。**※ `tryHold` / `markSold` / `markExpired` は PR #19 で先取り済**、本 issue は UseCase + テストのみ | C | RV-01 ✅ | RV-04, RV-05, OR-04 | 🔵 open |
+| ~~RV-03~~ | — | ReleaseHold UseCase + Authorization/Atomicity (PR #19) | C draft → B 実装 | — | — | ✅ closed |
+| **RV-04** | #36 | ExpireHoldsJob (1秒間隔, 期限切れ HOLD→EXPIRED + seat_states AVAILABLE 戻し) + 冪等テスト | C | RV-02 | (運用) | 🔵 open |
+| **RV-05** | #37 | seat_select.fxml Controller + LoadSeatMap/HoldSeats wire — **`SeatSelectController` 骨格 + `CurrentSelection` 読込部は PR #49 で先取り**、本 issue は座席グリッド描画 + クリックで HOLD の本実装 | C | RV-02, ID-03 ✅ | OR-06 | 🔵 open |
 
 #### ordering (C)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **OR-01** | `V030__ordering` + ordering domain (Order/Payment/Refund) + Repository 実装 | C | orders + payments + refunds テーブル + UNIQUE 制約 (1予約1注文 / 1注文1返金) + 集約 + Repository IT | PLAT-02, PLAT-04, RV-01 | OR-02, OR-04 |
-| **OR-02** | `MockPaymentGateway` (テスト用 PaymentGateway 実装) | C | success_rate / failNthCall / delayMs (concurrency シミュ用) | OR-01 | OR-04 |
-| **OR-03** | OR-01 StartCheckout (Query) | C | HOLD 中 Reservation → 合計金額再計算 → 表示 DTO (💰 Money 型) | OR-01, ID-03 | OR-06 |
-| **OR-04** ★ | OR-02 Checkout (重量 Tx 12-step) + ACID 4要件 + 💰 チェックリスト全項目 | C | **本案件最重量**。docs/data_model.md §4 のシーケンスを忠実に。Atomicity (全 12 ステップが all-or-nothing) / Consistency (`screenings` 集計値 = `seat_states` 集計) / Isolation (Lost Update / Phantom 排除) / Durability / 二重課金不可 / 二重返金不可 | RV-02, OR-01, OR-02, TK-01, ID-03, **PLAT-01**, **PLAT-05** | OR-05, OR-06, TK-02 |
-| **OR-05** | OR-03 CancelOrder + Refund (Mock) + テスト | C | 上映前のみ / Refund 冪等 (UNIQUE で守る) | OR-04 | (Sprint 2) |
-| **OR-06** | checkout.fxml Controller + UseCase wire (UI 動作確認) | C | 金額確認 → 決済ボタン → 成功/失敗ハンドリング | OR-03, OR-04 | (UI 統合) |
+| # | gh issue | タイトル | Owner | Blocked by | Blocks | 状態 |
+|---|---|---|---|---|---|---|
+| **OR-01** | #38 | V030 (placeholder 置換) + ordering domain (Order/Payment/Refund) + Repository IT + Module bind | C | (RV-01 ✅) | OR-02..06 | 🔵 open |
+| **OR-02** | #39 | `MockPaymentGateway` (success_rate / failNthCall / delayMs) | C | — | OR-04 | 🔵 open |
+| **OR-03** | #40 | StartCheckout (Query, Money 加算) | C | OR-01, ID-03 | OR-06 | 🔵 open |
+| **OR-04** ★ | #41 | **Checkout (12-step Tx) + ACID 4要件 + 💰 全項目** ★ 案件最重量 | C | RV-02, OR-01..02, TK-01 ✅, ID-03, PLAT-05 ✅ | OR-05, OR-06, TK-02 | 🔵 open |
+| **OR-05** | #42 | CancelOrder + Refund (Mock) + 冪等 | C | OR-04 | (Sprint 2) | 🔵 open |
+| **OR-06** | #43 | checkout.fxml Controller + UseCase wire | C | OR-03, OR-04, RV-05 | (UI 統合) | 🔵 open |
 
 #### ticketing (A)
 
-| # | タイトル | Owner | スコープ | Blocked by | Blocks |
-|---|---|---|---|---|---|
-| **TK-01** | `V040__ticketing` + Ticket domain + `JdbcTicketRepository` | A | tickets テーブル + `uq_tickets_active_seat` パーシャル UNIQUE INDEX (★ ダブルブッキング最終防壁) + Repository IT | PLAT-02, PLAT-03 | OR-04, TK-02 |
-| **TK-02** | TK-01 ListMyTickets + TK-02 GetTicketDetail (Query UC) | A | 自分のチケット一覧 (ACTIVE/USED/CANCELED) / 詳細 + QR (base64 文字列) | TK-01, OR-04 (発券されないと表示するチケットがない) | TK-03 |
-| **TK-03** | tickets.fxml Controller + UseCase wire (UI 動作確認) | A | 一覧 + 詳細パネル | TK-02 | (UI 統合) |
+| # | gh issue | タイトル | Owner | Blocked by | Blocks | 状態 |
+|---|---|---|---|---|---|---|
+| ~~TK-01~~ | — | V040 tickets + `uq_tickets_active_seat` + `JdbcTicketRepository` + Repository IT (PR #27) | A | — | OR-04, TK-02 | ✅ closed |
+| **TK-02** | #34 | ListMyTickets / GetTicketDetail (Query) | A | TK-01 ✅, OR-04 (実シナリオ用) | TK-03 | 🔵 open |
+| **TK-03** | #35 | tickets.fxml Controller + UseCase wire | A | TK-02, ID-03 | (UI 統合) | 🔵 open |
 
 ### 9.3 Sprint 2 (補強 / 統合)
 
-| # | タイトル | Owner | スコープ | Blocked by |
-|---|---|---|---|---|
-| **TK-04** | TK-03 MarkUsed (Cmd) + テスト | A | ACTIVE→USED 状態遷移 / 上映時間内のみ / 冪等 | TK-02 |
-| **OR-07** | OR-04 RefundOrder (admin/連鎖) + 冪等テスト | C | refunds.order_id UNIQUE で二重防止 / CT-12 CancelScreening の連鎖呼出と整合 | OR-05 |
-| **PLAT-06** | OutboxPublisher Job + テスト | A | 1 秒間隔で `domain_events_outbox` 未配信を取り出し配信 (本案件では log 出力で OK) / `published_at` 更新の冪等 | PLAT-01 |
-| **TEST-01** | E2E 通しシナリオテスト | 全員 | docs/spec.md §5 の MVP DoD 9 項目を1テストで通す | OR-04, ID-04, RV-05, TK-03 |
-| **TEST-02** | ArchUnit ルール強化 | A | `withOptionalLayers(true)` 解除 / BC 越境参照 ArchRule 追加 / `domain` の package-private 強制 | (Sprint 1 ほぼ完了) |
+| # | gh issue | タイトル | Owner | Blocked by | 状態 |
+|---|---|---|---|---|---|
+| **TK-04** | #46 | MarkUsed Cmd UC (もぎり、ACTIVE→USED 冪等) | A | TK-01 ✅ | 🔵 open |
+| **OR-07** | (未) | RefundOrder (admin/連鎖) — CT-12 と関連 | C | OR-05 | 未 issue 化 |
+| **PLAT-06** | #45 | OutboxPublisher Job + 配信冪等 | A | PLAT-01 ✅ | 🔵 open |
+| **TEST-01** | #44 | E2E 通しシナリオ (MVP DoD 9 項目) | 全員 (A 取りまとめ) | ID-02..04, RV-02..05, OR-01..04, TK-02 | 🔵 open |
+| **TEST-02** | (未) | ArchUnit ルール強化 (`withOptionalLayers` 解除 / BC 越境参照 ArchRule / `domain` package-private 強制) | A | Sprint 1 終了 | 未 issue 化 |
+| **CT-11** | (未) | (admin/任意) ScheduleScreening Tx 題材 | B | — | 未 issue 化 (任意) |
+| **CT-12** | (未) | (admin/任意) CancelScreening Tx + 返金連鎖 | B + C | OR-05 | 未 issue 化 (任意) |
 
 ### 9.4 Sprint 3 (リリース)
 
